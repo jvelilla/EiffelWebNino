@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 note
 	description: "Summary description for {HTTP_CONNECTION_HANDLER}."
 	author: ""
@@ -112,7 +113,6 @@ feature -- Parsing
 			not_void_method: method /= Void
 		end
 
-
 	analyze_request_message (a_input: HTTP_INPUT_STREAM)
         require
             input_readable: a_input /= Void and then a_input.is_readable
@@ -120,7 +120,7 @@ feature -- Parsing
         	end_of_stream : BOOLEAN
         	pos,n : INTEGER
         	line : STRING
-		k, val: STRING
+			k, val: STRING
         	txt: STRING
         do
             create txt.make (64)
@@ -137,8 +137,8 @@ feature -- Parsing
                 end_of_stream
             loop
                 line := a_input.last_string
-		n := line.count
-                print ("%N" +line+ "%N")
+				n := line.count
+                print ("%N" + line + "%N")
                 pos := line.index_of (':',1)
 				if pos > 0 then
 					k := line.substring(1, pos-1)
@@ -180,4 +180,7 @@ feature -- Parsing
 invariant
 	request_header_attached: request_header /= Void
 
+note
+	copyright: "2011-2011, Javier Velilla and others"
+	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
