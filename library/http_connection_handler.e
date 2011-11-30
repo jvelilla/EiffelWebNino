@@ -8,19 +8,21 @@ deferred class
 	HTTP_CONNECTION_HANDLER
 
 inherit
-	HTTP_HANDLER
-		redefine
-			make
-		end
+	ANY
+
+	HTTP_CONNECTION_HANDLER_I
+
+	HTTP_CONSTANTS
 
 feature {NONE} -- Initialization
 
-	make (a_main_server: like main_server)
-			-- Creates a {HTTP_CONNECTION_HANDLER}, assigns the main_server and sets the current_request_message to empty.
-			--
-			-- `a_main_server': The main server object
+	make (a_is_verbose: BOOLEAN)
+			-- Initialize Current connection handler
+			-- sets the current_request_message to empty.
 		do
-			Precursor (a_main_server)
+--			create client_socket.make_duplicate (a_socket)
+--			client_socket := a_socket
+			is_verbose := a_is_verbose
 			reset
 		end
 
@@ -33,23 +35,58 @@ feature {NONE} -- Initialization
 			remote_info := Void
 		end
 
+feature -- Status report
+
+	is_verbose: BOOLEAN
+
+feature -- Output
+
+	log (m: STRING)
+		do
+			print (m)
+		end
+
+feature -- Access
+
+	client_socket: detachable TCP_STREAM_SOCKET
+
 feature -- Execution
 
-	receive_message_and_send_reply (client_socket: TCP_STREAM_SOCKET)
+	receive_message_and_send_reply (a_socket: separate TCP_STREAM_SOCKET)
+		require
+			client_socket_void: client_socket = Void
+			socket_attached: a_socket /= Void
+--			socket_valid: client_socket.is_open_read and then client_socket.is_open_write
+			a_http_socket: not a_socket.is_closed
+		do
+			create client_socket.make_duplicate (a_socket)
+			launch
+--			client_socket := Void
+		end
+
+	execute
 		local
 			l_remote_info: detachable like remote_info
 		do
-			create l_remote_info
-			if attached client_socket.peer_address as l_addr then
-				l_remote_info.addr := l_addr.host_address.host_address
-				l_remote_info.hostname := l_addr.host_address.host_name
-				l_remote_info.port := l_addr.port
-				remote_info := l_remote_info
-			end
+			if attached client_socket as l_socket then
+				create l_remote_info
+				if attached l_socket.peer_address as l_addr then
+					l_remote_info.addr := l_addr.host_address.host_address
+					l_remote_info.hostname := l_addr.host_address.host_name
+					l_remote_info.port := l_addr.port
+					remote_info := l_remote_info
+				end
 
-            analyze_request_message (client_socket)
-			process_request (Current, client_socket)
-			reset
+
+	            analyze_request_message (l_socket)
+				process_request (Current, l_socket)
+				l_socket.cleanup
+				client_socket := Void
+
+				reset
+			else
+				check has_client_socket: False end
+			end
 		end
 
 feature -- Request processing
@@ -113,7 +150,7 @@ feature -- Parsing
 				loop
 					n := line.count
 					if is_verbose then
-						print ("%N" + line)
+						log ("%N" + line)
 					end
 					pos := line.index_of (':',1)
 					if pos > 0 then
@@ -145,9 +182,9 @@ feature -- Parsing
 			pos, next_pos: INTEGER
 		do
 			if is_verbose then
-				print ("%N## Parse HTTP request line ##")
-				print ("%N")
-				print (line)
+				log ("%N## Parse HTTP request line ##")
+				log ("%N")
+				log (line)
 			end
 			pos := line.index_of (' ', 1)
 			method := line.substring (1, pos - 1)

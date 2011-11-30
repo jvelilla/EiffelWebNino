@@ -15,6 +15,26 @@
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
 		<library name="net" location="$ISE_LIBRARY\library\net\net.ecf"/>
 		<library name="thread" location="$ISE_LIBRARY\library\thread\thread.ecf"/>
-		<cluster name="nino" location=".\library\" recursive="true"/>
+		<cluster name="nino" location=".\library\" recursive="true">
+			<condition>
+				<concurrency value="thread"/>
+			</condition>
+		</library>
+		<cluster name="nino" location=".\library\" recursive="true">
+			<file_rule>
+				<exclude>/concurrency$</exclude>
+			</file_rule>
+			<cluster name="concurrency_support" location="$|concurrency\support\"/>
+			<cluster name="concurrency_scoop" location="$|concurrency\scoop\">
+				<condition>
+					<concurrency value="scoop"/>
+				</condition>
+			</cluster>
+			<cluster name="concurrency_thread" location="$|concurrency\thread\">
+				<condition>
+					<concurrency value="thread"/>
+				</condition>
+			</cluster>
+		</cluster>
 	</target>
 </system>

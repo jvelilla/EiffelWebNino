@@ -15,27 +15,22 @@ create
 
 feature -- Initialization
 
-	make (cfg: like configuration)
+	make (cfg: separate HTTP_SERVER_CONFIGURATION)
 		do
 			configuration := cfg
 			set_server_configuration (configuration)
 		end
 
-	setup (a_http_handler: HTTP_HANDLER)
+	setup (a_http_handler: separate HTTP_HANDLER)
 		require
 			a_http_handler_valid: a_http_handler /= Void
 		do
-			if configuration.is_verbose then
-				print("%N%N%N")
-				print ("Starting Web Application Server (port="+ configuration.http_server_port.out +"):%N")
+			if is_verbose then
+				log ("%N%N%N")
+				log ("Starting Web Application Server (port="+ http_server_port.out +"):%N")
 			end
 			stop_requested := False
-			if configuration.force_single_threaded then
-				a_http_handler.execute
-			else
-				a_http_handler.launch
-				a_http_handler.join
-			end
+			a_http_handler.launch_and_wait
 		end
 
 	shutdown_server
@@ -43,13 +38,42 @@ feature -- Initialization
 			stop_requested := True
 		end
 
+feature -- Output
+
+	log (m: STRING)
+		do
+			io.put_string (m)
+		end
+
 feature	-- Access
 
-	configuration: HTTP_SERVER_CONFIGURATION
+	is_verbose: BOOLEAN
+		do
+			Result := separate_is_verbose (configuration)
+		end
+
+	http_server_port: INTEGER
+		do
+			Result := separate_http_server_port (configuration)
+		end
+
+	configuration: separate HTTP_SERVER_CONFIGURATION
 			-- Configuration of the server
 
 	stop_requested: BOOLEAN
 			-- Stops the server
+
+feature {NONE} -- Access
+
+	separate_is_verbose (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
+		do
+			Result := conf.is_verbose
+		end
+
+	separate_http_server_port (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
+		do
+			Result := conf.http_server_port
+		end
 
 ;note
 	copyright: "2011-2011, Javier Velilla and others"

@@ -9,7 +9,7 @@ class
 
 feature -- Access
 
-	server_configuration: detachable HTTP_SERVER_CONFIGURATION
+	server_configuration: detachable separate HTTP_SERVER_CONFIGURATION
 			-- Shared configuration
 		do
 			if attached server_configuration_cell.item as l_cfg then
@@ -21,7 +21,7 @@ feature -- Access
 			-- Shared document root
 		do
 			if attached server_configuration as l_cfg then
-				Result := l_cfg.document_root
+				Result := str_cp (cfg_document_root (l_cfg))
 			else
 				Result := ""
 			end
@@ -37,9 +37,34 @@ feature -- Element change
 
 feature {NONE} -- Implementation
 
-	server_configuration_cell: CELL [detachable HTTP_SERVER_CONFIGURATION]
+	s_c_c: separate CELL [detachable separate HTTP_SERVER_CONFIGURATION]
 		once ("PROCESS")
 			create Result.put (Void)
+		end
+
+	server_configuration_cell: S_CELL [detachable separate HTTP_SERVER_CONFIGURATION]
+		once
+			create Result.make (s_c_c)
+		end
+
+	cfg_document_root (l_cfg: attached separate HTTP_SERVER_CONFIGURATION): separate STRING_8
+		do
+			Result := l_cfg.document_root
+		end
+
+	str_cp (s: separate STRING_8): STRING_8
+		local
+			i: INTEGER
+		do
+			from
+				create Result.make_empty
+				i := 1
+			until
+				i > s.count
+			loop
+				Result.append_character (s [i])
+				i := i + 1
+			end
 		end
 
 note

@@ -10,10 +10,20 @@ inherit
 	NETWORK_STREAM_SOCKET
 
 create
-	make_server_by_port
+	make_server_by_port,
+	make_duplicate
 
 create {NETWORK_STREAM_SOCKET}
 	make_from_descriptor_and_address
+
+feature {NONE} -- Initialization
+
+	make_duplicate (s: separate TCP_STREAM_SOCKET)
+		require
+			descriptor_available: s.descriptor_available
+		do
+			create_from_descriptor (s.descriptor)
+		end
 
 feature -- Basic operation
 

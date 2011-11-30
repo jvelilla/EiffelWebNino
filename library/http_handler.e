@@ -8,7 +8,7 @@ deferred class
 	HTTP_HANDLER
 
 inherit
-	THREAD
+	HTTP_HANDLER_I
 
 	HTTP_CONSTANTS
 
@@ -39,18 +39,18 @@ feature -- Inherited Features
 			launched := False
 			port := 0
 			is_stop_requested := False
-			l_http_port := main_server_configuration.http_server_port
+			l_http_port := http_server_port (main_server_configuration (main_server))
 			create l_http_socket.make_server_by_port (l_http_port)
 			if not l_http_socket.is_bound then
 				if is_verbose then
-					print ("Socket could not be bound on port " + l_http_port.out )
+					log ("Socket could not be bound on port " + l_http_port.out )
 				end
 			else
 				l_http_port := l_http_socket.port
 				from
-					l_http_socket.listen (main_server_configuration.max_tcp_clients)
+					l_http_socket.listen (max_tcp_clients (main_server_configuration (main_server)))
 					if is_verbose then
-						print ("%NHTTP Connection Server ready on port " + l_http_port.out +" : http://localhost:" + l_http_port.out + "/%N")
+						log ("%NHTTP Connection Server ready on port " + l_http_port.out +" : http://localhost:" + l_http_port.out + "/%N")
 					end
 					on_launched (l_http_port)
 				until
@@ -59,16 +59,10 @@ feature -- Inherited Features
 					l_http_socket.accept
 					if not is_stop_requested then
 						if attached l_http_socket.accepted as l_thread_http_socket then
-								--| FIXME jfiat [2011/11/03] : should launch a new thread to handle this connection
-								--| also handle permanent connection...?
-							receive_message_and_send_reply (l_thread_http_socket)
-							l_thread_http_socket.cleanup
-							check
-								socket_closed: l_thread_http_socket.is_closed
-							end
+							process_connection (l_thread_http_socket)
 						end
 					end
-					is_stop_requested := main_server.stop_requested
+					is_stop_requested := stop_requested (main_server)
 				end
 				l_http_socket.cleanup
 				check
@@ -79,10 +73,10 @@ feature -- Inherited Features
 				on_stopped
 			end
 			if is_verbose then
-				print ("HTTP Connection Server ends.")
+				log ("HTTP Connection Server ends.")
 			end
 		rescue
-			print ("HTTP Connection Server shutdown due to exception. Please relaunch manually.")
+			log ("HTTP Connection Server shutdown due to exception. Please relaunch manually.")
 
 			if attached l_http_socket as ll_http_socket then
 				ll_http_socket.cleanup
@@ -95,6 +89,25 @@ feature -- Inherited Features
 			end
 			is_stop_requested := True
 			retry
+		end
+
+	process_connection (a_socket: separate TCP_STREAM_SOCKET)
+		do
+				--| FIXME jfiat [2011/11/03] : should launch a new thread to handle this connection
+				--| also handle permanent connection...?
+			log ("Incoming connection...%N")
+			call_receive_message_and_send_reply (new_http_connection_handler, a_socket)
+		end
+
+	call_receive_message_and_send_reply (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: separate TCP_STREAM_SOCKET)
+		do
+			hdl.receive_message_and_send_reply (a_socket)
+		end
+
+feature {NONE} -- Factory
+
+	new_http_connection_handler: separate HTTP_CONNECTION_HANDLER
+		deferred
 		end
 
 feature -- Event
@@ -121,11 +134,16 @@ feature -- Event
 		end
 
 feature -- Access
-	
+
 	is_verbose: BOOLEAN
 			-- Is verbose for output messages.
 		do
-			Result := main_server_configuration.is_verbose
+			Result := separate_is_verbose (main_server_configuration (main_server))
+		end
+
+	force_single_threaded: BOOLEAN
+		do
+			Result := separate_force_single_threaded (main_server_configuration (main_server))
 		end
 
 	is_stop_requested: BOOLEAN
@@ -140,13 +158,38 @@ feature -- Access
 
 feature {NONE} -- Access
 
-	main_server: HTTP_SERVER
+	main_server: separate HTTP_SERVER
 			-- The main server object
 
-	main_server_configuration: HTTP_SERVER_CONFIGURATION
+	main_server_configuration (server: separate HTTP_SERVER): separate HTTP_SERVER_CONFIGURATION
 			-- The main server's configuration
 		do
-			Result := main_server.configuration
+			Result := server.configuration
+		end
+
+	separate_is_verbose (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
+		do
+			Result := conf.is_verbose
+		end
+
+	separate_force_single_threaded (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
+		do
+			Result := conf.force_single_threaded
+		end
+
+	http_server_port (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
+		do
+			Result := conf.http_server_port
+		end
+
+	max_tcp_clients (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
+		do
+			Result := conf.max_tcp_clients
+		end
+
+	stop_requested (server: separate HTTP_SERVER): BOOLEAN
+		do
+			Result := server.stop_requested
 		end
 
 feature -- Status setting
@@ -157,15 +200,15 @@ feature -- Status setting
 			is_stop_requested := True
 		end
 
-feature -- Execution
+--feature -- Execution
 
-	receive_message_and_send_reply (client_socket: TCP_STREAM_SOCKET)
-		require
-			socket_attached: client_socket /= Void
---			socket_valid: client_socket.is_open_read and then client_socket.is_open_write
-			a_http_socket: not client_socket.is_closed
-		deferred
-		end
+--	receive_message_and_send_reply (client_socket: separate TCP_STREAM_SOCKET)
+--		require
+--			socket_attached: client_socket /= Void
+----			socket_valid: client_socket.is_open_read and then client_socket.is_open_write
+--			a_http_socket: not client_socket.is_closed
+--		deferred
+--		end
 
 invariant
 	main_server_attached: main_server /= Void
