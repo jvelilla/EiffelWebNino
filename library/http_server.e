@@ -7,9 +7,6 @@ note
 class
 	HTTP_SERVER
 
-inherit
-	HTTP_SERVER_SHARED_CONFIGURATION
-
 create
 	make
 
@@ -18,10 +15,9 @@ feature -- Initialization
 	make (cfg: separate HTTP_SERVER_CONFIGURATION)
 		do
 			configuration := cfg
-			set_server_configuration (configuration)
 		end
 
-	setup (a_http_handler: separate HTTP_HANDLER)
+	setup (a_http_handler: HTTP_HANDLER)
 		require
 			a_http_handler_valid: a_http_handler /= Void
 		do
@@ -30,7 +26,7 @@ feature -- Initialization
 				log ("Starting Web Application Server (port="+ http_server_port.out +"):%N")
 			end
 			stop_requested := False
-			a_http_handler.launch_and_wait
+			a_http_handler.execute
 		end
 
 	shutdown_server
@@ -76,6 +72,6 @@ feature {NONE} -- Access
 		end
 
 ;note
-	copyright: "2011-2011, Javier Velilla and others"
+	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

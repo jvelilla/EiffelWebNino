@@ -9,6 +9,8 @@ class
 inherit
 	ARGUMENTS
 
+	HTTP_SERVER_SHARED_CONFIGURATION
+
 create
 	make
 
@@ -19,13 +21,14 @@ feature {NONE} -- Initialization
 		local
 			l_server : HTTP_SERVER
 			l_cfg: separate HTTP_SERVER_CONFIGURATION
-			l_http_handler : separate HTTP_HANDLER
+			l_http_handler: HTTP_HANDLER
 		do
 			create l_cfg.make
 			setup (l_cfg)
+			set_server_configuration (l_cfg)
 
 			create l_server.make (l_cfg)
-			create {separate APPLICATION_HANDLER} l_http_handler.make (l_server)
+			create {APPLICATION_HANDLER} l_http_handler.make (l_server)
 			l_server.setup (l_http_handler)
 		end
 

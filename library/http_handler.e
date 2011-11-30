@@ -1,6 +1,5 @@
 note
 	description: "Summary description for {HTTP_CONNECTION_HANDLER}."
-	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -8,7 +7,7 @@ deferred class
 	HTTP_HANDLER
 
 inherit
-	HTTP_HANDLER_I
+	ANY
 
 	HTTP_CONSTANTS
 
@@ -25,6 +24,13 @@ feature {NONE} -- Initialization
 			is_stop_requested := False
 		ensure
 			main_server_set: a_main_server ~ main_server
+		end
+
+feature -- Output
+
+	log (m: STRING)
+		do
+			print (m)
 		end
 
 feature -- Inherited Features
@@ -59,7 +65,7 @@ feature -- Inherited Features
 					l_http_socket.accept
 					if not is_stop_requested then
 						if attached l_http_socket.accepted as l_thread_http_socket then
-							process_connection (l_thread_http_socket)
+							process_connection (create {TCP_STREAM_SOCKET}.make_duplicate (l_thread_http_socket))
 						end
 					end
 					is_stop_requested := stop_requested (main_server)
@@ -91,17 +97,16 @@ feature -- Inherited Features
 			retry
 		end
 
-	process_connection (a_socket: separate TCP_STREAM_SOCKET)
+	process_connection (a_socket: TCP_STREAM_SOCKET)
 		do
-				--| FIXME jfiat [2011/11/03] : should launch a new thread to handle this connection
-				--| also handle permanent connection...?
 			log ("Incoming connection...%N")
 			call_receive_message_and_send_reply (new_http_connection_handler, a_socket)
 		end
 
 	call_receive_message_and_send_reply (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: separate TCP_STREAM_SOCKET)
 		do
-			hdl.receive_message_and_send_reply (a_socket)
+			hdl.set_client_socket (a_socket)
+			hdl.receive_message_and_send_reply (force_single_threaded)
 		end
 
 feature {NONE} -- Factory
@@ -214,6 +219,6 @@ invariant
 	main_server_attached: main_server /= Void
 
 note
-	copyright: "2011-2011, Javier Velilla and others"
+	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

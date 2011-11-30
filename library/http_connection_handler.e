@@ -39,6 +39,16 @@ feature -- Status report
 
 	is_verbose: BOOLEAN
 
+
+	set_client_socket (a_socket: separate TCP_STREAM_SOCKET)
+		require
+			socket_attached: a_socket /= Void
+--			socket_valid: a_socket.is_open_read and then a_socket.is_open_write
+			a_http_socket: not a_socket.is_closed
+		do
+			create client_socket.make_duplicate (a_socket)
+		end
+
 feature -- Output
 
 	log (m: STRING)
@@ -52,16 +62,17 @@ feature -- Access
 
 feature -- Execution
 
-	receive_message_and_send_reply (a_socket: separate TCP_STREAM_SOCKET)
+	receive_message_and_send_reply (force_single_threaded: BOOLEAN)
 		require
-			client_socket_void: client_socket = Void
-			socket_attached: a_socket /= Void
---			socket_valid: client_socket.is_open_read and then client_socket.is_open_write
-			a_http_socket: not a_socket.is_closed
+			socket_attached: attached client_socket as r_client_socket
+--			socket_valid: r_client_socket.is_open_read and then r_client_socket.is_open_write
+			a_http_socket: not r_client_socket.is_closed
 		do
-			create client_socket.make_duplicate (a_socket)
-			launch
---			client_socket := Void
+			if force_single_threaded then
+				execute
+			else
+				launch
+			end
 		end
 
 	execute
@@ -209,6 +220,6 @@ invariant
 	request_header_attached: request_header /= Void
 
 note
-	copyright: "2011-2011, Javier Velilla and others"
+	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
