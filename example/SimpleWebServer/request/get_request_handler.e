@@ -103,7 +103,14 @@ feature -- Execution
 			html: STRING_8
 		do
 			answer.set_reply_text ("")
-			html := " <html> <head> <title> NINO HTTPD </title> " + "    </head>   " + "       <body>    " + ($Current).out + " <h1> Welcome to NINO HTTPD! </h1> " + " <p>  Default page  " + " </p> " + " </body> " + " </html> "
+			html := "<html>" +
+					" <head><title> NINO HTTPD </title></head>" +
+					" <body>" +
+					"  <h1>Welcome to NINO HTTPD!</h1>" +
+					"  <p> Default page</p>" +
+					($Current).out +
+					" </body>" +
+					"</html>"
 			answer.append_reply_text (html)
 		end
 

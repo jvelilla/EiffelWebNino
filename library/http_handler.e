@@ -1,5 +1,9 @@
 note
-	description: "Summary description for {HTTP_CONNECTION_HANDLER}."
+	description: "[
+			Instance of  HTTP_CONNECTION_HANDLER
+			is in charge to process the incoming connection without any specific analysis
+
+		]"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -13,24 +17,25 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (a_main_server: like main_server)
-			-- Creates a {HTTP_HANDLER}, assigns the main_server and initialize various values
+	make (a_server: like server)
+			-- Creates a {HTTP_HANDLER}, assigns the server and initialize various values
 			--
-			-- `a_main_server': The main server object
+			-- `a_server': The main server object
 		require
-			a_main_server_attached: a_main_server /= Void
+			a_server_attached: a_server /= Void
 		do
-			main_server := a_main_server
+			server := a_server
 			is_stop_requested := False
 		ensure
-			main_server_set: a_main_server ~ main_server
+			server_set: a_server ~ server
 		end
 
 feature -- Output
 
-	log (m: STRING)
+	log (a_message: READABLE_STRING_8)
+			-- Output message
 		do
-			print (m)
+			io.put_string (a_message)
 		end
 
 feature -- Inherited Features
@@ -39,22 +44,22 @@ feature -- Inherited Features
 			-- <Precursor>
 			-- Creates a socket and connects to the http server.
 		local
-			l_http_socket: detachable TCP_STREAM_SOCKET
+			l_listening_socket: detachable TCP_STREAM_SOCKET
 			l_http_port: INTEGER
 		do
 			launched := False
 			port := 0
 			is_stop_requested := False
-			l_http_port := http_server_port (main_server_configuration (main_server))
-			create l_http_socket.make_server_by_port (l_http_port)
-			if not l_http_socket.is_bound then
+			l_http_port := http_server_port
+			create l_listening_socket.make_server_by_port (l_http_port)
+			if not l_listening_socket.is_bound then
 				if is_verbose then
 					log ("Socket could not be bound on port " + l_http_port.out )
 				end
 			else
-				l_http_port := l_http_socket.port
+				l_http_port := l_listening_socket.port
 				from
-					l_http_socket.listen (max_tcp_clients (main_server_configuration (main_server)))
+					l_listening_socket.listen (max_tcp_clients)
 					if is_verbose then
 						log ("%NHTTP Connection Server ready on port " + l_http_port.out +" : http://localhost:" + l_http_port.out + "/%N")
 					end
@@ -62,17 +67,17 @@ feature -- Inherited Features
 				until
 					is_stop_requested
 				loop
-					l_http_socket.accept
+					l_listening_socket.accept
 					if not is_stop_requested then
-						if attached l_http_socket.accepted as l_thread_http_socket then
-							process_connection (create {TCP_STREAM_SOCKET}.make_duplicate (l_thread_http_socket))
+						if attached l_listening_socket.accepted as l_thread_http_socket then
+							process_connection (l_thread_http_socket)
 						end
 					end
-					is_stop_requested := stop_requested (main_server)
+					is_stop_requested := stop_requested_on_server (server)
 				end
-				l_http_socket.cleanup
+				l_listening_socket.cleanup
 				check
-					socket_is_closed: l_http_socket.is_closed
+					socket_is_closed: l_listening_socket.is_closed
 				end
 			end
 			if launched then
@@ -84,10 +89,10 @@ feature -- Inherited Features
 		rescue
 			log ("HTTP Connection Server shutdown due to exception. Please relaunch manually.")
 
-			if attached l_http_socket as ll_http_socket then
-				ll_http_socket.cleanup
+			if l_listening_socket /= Void then
+				l_listening_socket.cleanup
 				check
-					socket_is_closed: ll_http_socket.is_closed
+					listening_socket_is_closed: l_listening_socket.is_closed
 				end
 			end
 			if launched then
@@ -140,16 +145,11 @@ feature -- Event
 
 feature -- Access
 
-	is_verbose: BOOLEAN
-			-- Is verbose for output messages.
-		do
-			Result := separate_is_verbose (main_server_configuration (main_server))
-		end
+	port: INTEGER
+			-- Listening port.
+			--| 0: not launched
 
-	force_single_threaded: BOOLEAN
-		do
-			Result := separate_force_single_threaded (main_server_configuration (main_server))
-		end
+feature -- Status
 
 	is_stop_requested: BOOLEAN
 			-- Set true to stop accept loop
@@ -157,20 +157,60 @@ feature -- Access
 	launched: BOOLEAN
 			-- Server launched and listening on `port'
 
-	port: INTEGER
-			-- Listening port.
-			--| 0: not launched
+feature -- Status setting
 
-feature {NONE} -- Access
+	shutdown
+			-- Stops the thread
+		do
+			is_stop_requested := True
+		end
 
-	main_server: separate HTTP_SERVER
+feature -- Access: configuration
+
+	is_verbose: BOOLEAN
+			-- Is verbose for output messages.
+		do
+			Result := separate_is_verbose (server_configuration)
+		end
+
+	force_single_threaded: BOOLEAN
+		do
+			Result := separate_force_single_threaded (server_configuration)
+		end
+
+	http_server_port: INTEGER
+		do
+			Result := separate_http_server_port (server_configuration)
+		end
+
+	max_tcp_clients: INTEGER
+		do
+			Result := separate_max_tcp_clients (server_configuration)
+		end
+
+feature {NONE} -- Access: server
+
+	server: separate HTTP_SERVER
 			-- The main server object
 
-	main_server_configuration (server: separate HTTP_SERVER): separate HTTP_SERVER_CONFIGURATION
+	server_configuration: separate HTTP_SERVER_CONFIGURATION
 			-- The main server's configuration
 		do
-			Result := server.configuration
+			Result := separate_server_configuration (server)
 		end
+
+	separate_server_configuration (a_server: like server): separate HTTP_SERVER_CONFIGURATION
+			-- The main server's configuration
+		do
+			Result := a_server.configuration
+		end
+
+	stop_requested_on_server (a_server: like server): BOOLEAN
+		do
+			Result := a_server.stop_requested
+		end
+
+feature {NONE} -- Access: configuration
 
 	separate_is_verbose (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
 		do
@@ -182,41 +222,18 @@ feature {NONE} -- Access
 			Result := conf.force_single_threaded
 		end
 
-	http_server_port (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
+	separate_http_server_port (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
 		do
 			Result := conf.http_server_port
 		end
 
-	max_tcp_clients (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
+	separate_max_tcp_clients (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
 		do
 			Result := conf.max_tcp_clients
 		end
 
-	stop_requested (server: separate HTTP_SERVER): BOOLEAN
-		do
-			Result := server.stop_requested
-		end
-
-feature -- Status setting
-
-	shutdown
-			-- Stops the thread
-		do
-			is_stop_requested := True
-		end
-
---feature -- Execution
-
---	receive_message_and_send_reply (client_socket: separate TCP_STREAM_SOCKET)
---		require
---			socket_attached: client_socket /= Void
-----			socket_valid: client_socket.is_open_read and then client_socket.is_open_write
---			a_http_socket: not client_socket.is_closed
---		deferred
---		end
-
 invariant
-	main_server_attached: main_server /= Void
+	server_attached: server /= Void
 
 note
 	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"

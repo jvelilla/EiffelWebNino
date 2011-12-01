@@ -1,6 +1,8 @@
 note
-	description: "Summary description for {HTTP_CONNECTION_HANDLER}."
-	author: ""
+	description: "[
+			 Instance of HTTP_CONNECTION_HANDLER will process the incoming connection
+			 and extract information on the request and the server
+		 ]"
 	date: "$Date$"
 	revision: "$Revision$"
 

@@ -23,7 +23,6 @@
 			<file_rule>
 				<exclude>/concurrency$</exclude>
 			</file_rule>
-			<cluster name="concurrency_support" location="$|concurrency\support\"/>
 			<cluster name="concurrency_scoop" location="$|concurrency\scoop\">
 				<condition>
 					<concurrency value="scoop"/>

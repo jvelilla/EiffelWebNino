@@ -17,7 +17,7 @@ feature {NONE} -- Factory
 
 	new_http_connection_handler: separate HTTP_CONNECTION_HANDLER
 		local
-			h: separate APPLICATION_CONNECTION_HANDLER
+			h: separate APPLICATION_CONNECTION_HANDLER --| Remove "separate" to get non concurrent behavior
 		do
 			create h.make (is_verbose)
 			Result := h

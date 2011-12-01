@@ -17,7 +17,7 @@ feature -- Initialization
 			configuration := cfg
 		end
 
-	setup (a_http_handler: HTTP_HANDLER)
+	setup (a_http_handler: separate HTTP_HANDLER)
 		require
 			a_http_handler_valid: a_http_handler /= Void
 		do

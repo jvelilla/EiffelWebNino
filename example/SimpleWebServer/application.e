@@ -19,7 +19,7 @@ feature {NONE} -- Initialization
 	make
 			-- Run application.
 		local
-			l_server : HTTP_SERVER
+			l_server: HTTP_SERVER
 			l_cfg: separate HTTP_SERVER_CONFIGURATION
 			l_http_handler: HTTP_HANDLER
 		do

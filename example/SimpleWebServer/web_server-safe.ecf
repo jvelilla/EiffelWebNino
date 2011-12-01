@@ -16,7 +16,7 @@
 		<library name="nino" location="..\..\nino-safe.ecf" readonly="false"/>
 		<cluster name="src" location=".\" recursive="true"/>
 	</target>
-	<target name="web_server_threaded" extends="common">
+	<target name="web_server_mt" extends="common">
 		<root class="APPLICATION" feature="make"/>
 		<setting name="concurrency" value="thread"/>
 	</target>
