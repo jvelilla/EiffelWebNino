@@ -43,7 +43,10 @@ feature -- Inherited Features
 		local
 			l_listening_socket: detachable TCP_STREAM_SOCKET
 			l_http_port: INTEGER
+			pool : THREAD_POOL[ANY]
+			work_agent: PROCEDURE [ANY, TUPLE]
 		do
+			create pool.make (8)
 			launched := False
 			port := 0
 			is_stop_requested := False
@@ -67,11 +70,14 @@ feature -- Inherited Features
 					l_listening_socket.accept
 					if not is_stop_requested then
 						if attached l_listening_socket.accepted as l_thread_http_socket then
-							process_connection (l_thread_http_socket)
+							work_agent := agent process_connection (l_thread_http_socket)
+							pool.add_work (work_agent)
 						end
 					end
 					is_stop_requested := stop_requested_on_server
 				end
+				pool.wait_for_completion
+				pool.terminate
 				l_listening_socket.cleanup
 				check
 					socket_is_closed: l_listening_socket.is_closed
@@ -215,6 +221,6 @@ invariant
 	server_attached: server /= Void
 
 note
-	copyright: "2011-2011, Javier Velilla and others"
+	copyright: "2011-2012, Javier Velilla and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
