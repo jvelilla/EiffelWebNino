@@ -7,6 +7,12 @@ note
 deferred class
 	HTTP_CONNECTION_HANDLER_I
 
+feature {NONE} -- Initialization
+
+	make (a_is_verbose: BOOLEAN)
+		do
+		end
+
 feature -- Execution
 
 	launch

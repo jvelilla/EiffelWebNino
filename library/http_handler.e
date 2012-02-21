@@ -104,15 +104,36 @@ feature -- Inherited Features
 
 	process_connection (a_socket: TCP_STREAM_SOCKET)
 		do
-			log ("Incoming connection...%N")
+			if is_verbose then
+				log ("Incoming connection ...%N")
+			end
 			call_receive_message_and_send_reply (new_http_connection_handler, a_socket)
 		end
 
 	call_receive_message_and_send_reply (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: separate TCP_STREAM_SOCKET)
 		do
 			hdl.set_client_socket (a_socket)
-			hdl.receive_message_and_send_reply (force_single_threaded)
+			if force_single_threaded then
+				hdl.receive_message_and_send_reply (True)
+			else
+				pool.add_connection (hdl)
+--				hdl.receive_message_and_send_reply (False)
+			end
 		end
+
+	pool: HTTP_CONNECTION_POOL
+		local
+			l_pool: like internal_pool
+		do
+			l_pool := internal_pool
+			if l_pool = Void then
+				create l_pool.make (10)
+				internal_pool := l_pool
+			end
+			Result := l_pool
+		end
+
+	internal_pool: detachable like pool
 
 feature {NONE} -- Factory
 
@@ -236,6 +257,6 @@ invariant
 	server_attached: server /= Void
 
 note
-	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2012, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

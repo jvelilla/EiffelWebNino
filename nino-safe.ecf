@@ -23,12 +23,12 @@
 			<file_rule>
 				<exclude>/concurrency$</exclude>
 			</file_rule>
-			<cluster name="concurrency_scoop" location="$|concurrency\scoop\">
+			<cluster name="concurrency_scoop" location="$|concurrency\scoop\" recursive="true">
 				<condition>
 					<concurrency value="scoop"/>
 				</condition>
 			</cluster>
-			<cluster name="concurrency_thread" location="$|concurrency\thread\">
+			<cluster name="concurrency_thread" location="$|concurrency\thread\" recursive="true">
 				<condition>
 					<concurrency value="thread"/>
 				</condition>

@@ -17,7 +17,7 @@ feature -- Initialization
 			configuration := cfg
 		end
 
-	setup (a_http_handler: separate HTTP_HANDLER)
+	setup, launch (a_http_handler: separate HTTP_HANDLER)
 		require
 			a_http_handler_valid: a_http_handler /= Void
 		do
@@ -72,6 +72,6 @@ feature {NONE} -- Access
 		end
 
 ;note
-	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2012, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

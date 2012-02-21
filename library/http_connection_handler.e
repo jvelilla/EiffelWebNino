@@ -13,8 +13,14 @@ inherit
 	ANY
 
 	HTTP_CONNECTION_HANDLER_I
+		redefine
+			make
+		end
 
 	HTTP_CONSTANTS
+		export
+			{NONE} all
+		end
 
 feature {NONE} -- Initialization
 
@@ -22,8 +28,7 @@ feature {NONE} -- Initialization
 			-- Initialize Current connection handler
 			-- sets the current_request_message to empty.
 		do
---			create client_socket.make_duplicate (a_socket)
---			client_socket := a_socket
+			Precursor (a_is_verbose)
 			is_verbose := a_is_verbose
 			reset
 		end
@@ -40,7 +45,6 @@ feature {NONE} -- Initialization
 feature -- Status report
 
 	is_verbose: BOOLEAN
-
 
 	set_client_socket (a_socket: separate TCP_STREAM_SOCKET)
 		require
@@ -222,6 +226,6 @@ invariant
 	request_header_attached: request_header /= Void
 
 note
-	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2012, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
