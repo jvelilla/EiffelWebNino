@@ -25,6 +25,11 @@ feature -- creation
 			create content_length_data.make_empty
 			reason_phrase := ok_message
 			content_type_data := text_html
+			connection_header := "Connection : close"
+--			 Persistent connection are by default in HTTP 1.1
+--			 But our current implementation does not support it yet.
+--			 So, as we dont support persistent connection (yet!!!) we
+--			 need to inform the client about it using the header Connection : close
 			set_reply_text (Void)
 		end
 
@@ -48,6 +53,9 @@ feature -- response header fields
 
 	content_type_data: STRING
 			-- type of content in this reply (eg. text/html)
+
+	connection_header : STRING
+
 
 feature -- Element change
 
@@ -94,6 +102,8 @@ feature -- Access: send reply
 			Result.append (crlf)
 			Result.append (Content_type + ": ")
 			Result.append (content_type_data)
+			Result.append (crlf)
+			Result.append (connection_header) -- we send Connection : close
 			Result.append (crlf)
 			Result.append (Content_length + ": ")
 			Result.append (content_length_data)
@@ -142,6 +152,6 @@ feature -- Change element: send reply
 		end
 
 note
-	copyright: "2011-2011, Javier Velilla and others"
+	copyright: "2011-2012, Javier Velilla and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

@@ -113,6 +113,11 @@ feature -- Inherited Features
 			end
 				--| FIXME jfiat [2011/11/03] : should use a Pool of Threads/Handler to process this connection
 				--| also handle permanent connection...?
+				--| FIXME jvelilla [2012/02/24] : HTTP 1.1, persistent connection are by default, so we need to
+			    --| close the connection based on :
+			    --|   the client send in the header "Connection : close"
+			    --|   the timeout bind to the connection : expire
+			    --| More info: Seccion 8: Persistent connection in RFC2616
 			receive_message_and_send_reply (a_socket)
 			a_socket.cleanup
 			if is_verbose then

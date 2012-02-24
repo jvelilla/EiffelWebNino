@@ -10,6 +10,9 @@ class
 
 inherit
 	THREAD
+		rename
+			make as make_thread
+		end
 
 create {THREAD_POOL}
 	make
@@ -20,6 +23,7 @@ feature {NONE} -- Initialization
 			-- `a_thread_pool', the pool in which this thread is managed
 			-- `a_semaphore' is used for execution suspending
 		do
+			make_thread
 			thread_pool := a_thread_pool
 			semaphore := a_semaphore
 		end
@@ -81,8 +85,8 @@ feature {NONE} -- Implementation
 			thread_pool.thread_terminated
 		end
 note
-	copyright: "Copyright (c) 1984-2011, Eiffel Software"
-	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	copyright: "2011-2012, Javier Velilla and others"
+	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
 			This file is part of Eiffel Software's Eiffel Development Environment.

@@ -30,7 +30,9 @@ feature {NONE} -- Initialization
 			create method.make_empty
 			create uri.make_empty
 			create request_header.make_empty
+			global_launch_mutex.lock
 			create request_header_map.make (10)
+			global_launch_mutex.unlock
 			remote_info := Void
 		end
 
@@ -121,7 +123,7 @@ feature -- Parsing
 				txt.append_character ('%N')
 				analyze_request_line (l_request_line)
 			else
-				has_error := True
+--				has_error := True
 			end
 
 			l_is_verbose := is_verbose
@@ -147,7 +149,9 @@ feature -- Parsing
 							n := n - 1
 						end
 						val := line.substring (pos + 1, n)
+						global_launch_mutex.lock
 						request_header_map.put (val, k)
+						global_launch_mutex.unlock
 					end
 					txt.append (line)
 					txt.append_character ('%N')
@@ -190,10 +194,18 @@ feature -- Parsing
 			end
 		end
 
+	global_launch_mutex: MUTEX
+			-- Global mutex to syncronize write access to request_heder_map
+		note
+			once_status: global
+		once
+			create Result.make
+		end
+
 invariant
 	request_header_attached: request_header /= Void
 
 note
-	copyright: "2011-2011, Javier Velilla and others"
+	copyright: "2011-2012, Javier Velilla and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
