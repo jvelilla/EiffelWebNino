@@ -1,7 +1,7 @@
 class ECHO
 
-inherit
-	HTTP_SERVER_SHARED_CONFIGURATION
+--inherit
+--	HTTP_SERVER_SHARED_CONFIGURATION
 
 create
 	make,
@@ -15,7 +15,7 @@ feature
 		do
 			create cfg.make
 			setup (cfg, p)
-			set_server_configuration (cfg)
+--			set_server_configuration (cfg)
 
 			create server.make (cfg)
 			create {TEST_HANDLER} handler.make (server)
@@ -60,7 +60,6 @@ feature {NONE} -- Implementation
 	setup (a_cfg: separate HTTP_SERVER_CONFIGURATION; a_port: INTEGER)
 		do
 			a_cfg.http_server_port := a_port
-			a_cfg.document_root := ""
 --			a_cfg.set_force_single_threaded (True)
 --			debug ("nino")
 				a_cfg.set_is_verbose (True)

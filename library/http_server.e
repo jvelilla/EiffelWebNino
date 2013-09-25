@@ -12,7 +12,7 @@ create
 
 feature -- Initialization
 
-	make (cfg: separate HTTP_SERVER_CONFIGURATION)
+	make (cfg: HTTP_SERVER_CONFIGURATION)
 		do
 			configuration := cfg
 		end
@@ -45,15 +45,15 @@ feature	-- Access
 
 	is_verbose: BOOLEAN
 		do
-			Result := separate_is_verbose (configuration)
+			Result := configuration_is_verbose (configuration)
 		end
 
 	http_server_port: INTEGER
 		do
-			Result := separate_http_server_port (configuration)
+			Result := configuration_http_server_port (configuration)
 		end
 
-	configuration: separate HTTP_SERVER_CONFIGURATION
+	configuration: HTTP_SERVER_CONFIGURATION
 			-- Configuration of the server
 
 	stop_requested: BOOLEAN
@@ -61,17 +61,17 @@ feature	-- Access
 
 feature {NONE} -- Access
 
-	separate_is_verbose (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
+	configuration_is_verbose (conf: HTTP_SERVER_CONFIGURATION): BOOLEAN
 		do
 			Result := conf.is_verbose
 		end
 
-	separate_http_server_port (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
+	configuration_http_server_port (conf: HTTP_SERVER_CONFIGURATION): INTEGER
 		do
 			Result := conf.http_server_port
 		end
 
 ;note
-	copyright: "2011-2012, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
