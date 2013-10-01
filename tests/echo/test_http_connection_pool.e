@@ -19,7 +19,7 @@ feature -- Access
 		local
 			h: separate TEST_CONNECTION_HANDLER --| Remove "separate" to get non concurrent behavior
 		do
-			create h.make (False) --is_verbose)
+			create h.make (is_verbose)
 			Result := h
 		end
 

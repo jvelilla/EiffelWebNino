@@ -94,11 +94,11 @@ feature -- Output
 
 	log (m: STRING)
 		do
-			if attached logger as l_logger then
-				separate_log (m, l_logger)
-			else
+--			if attached logger as l_logger then
+--				separate_log (m, l_logger)
+--			else
 				io.put_string (m + "%N")
-			end
+--			end
 		end
 
 	separate_log (m: STRING; a_logger: separate HTTP_SERVER_LOGGER)
@@ -147,7 +147,7 @@ feature -- Execution
 	            if has_error then
 					check catch_bad_incoming_connection: False end
 					if is_verbose then
-						check invalid_incoming_request: False end
+--						check invalid_incoming_request: False end
 						log ("ERROR: invalid HTTP incoming request")
 					end
 				else
