@@ -7,6 +7,9 @@ note
 class
 	HTTP_SERVER
 
+inherit
+	HTTP_SERVER_LOGGER
+
 create
 	make
 
@@ -15,18 +18,38 @@ feature -- Initialization
 	make (cfg: HTTP_SERVER_CONFIGURATION)
 		do
 			configuration := cfg
+			output := io.error
 		end
 
-	setup, launch (a_http_handler: separate HTTP_HANDLER)
+	setup (a_http_handler: separate HTTP_HANDLER)
+		obsolete
+			"Use `launch' [Oct-2013]"
+		do
+			launch (a_http_handler)
+		end
+
+	launch (a_http_handler: separate HTTP_HANDLER)
 		require
 			a_http_handler_valid: a_http_handler /= Void
 		do
+			is_terminated := False
 			if is_verbose then
-				log ("%N%N%N")
-				log ("Starting Web Application Server (port="+ http_server_port.out +"):%N")
+				log ("%N%NStarting Web Application Server (port="+ http_server_port.out +"):%N")
 			end
 			stop_requested := False
 			a_http_handler.execute
+			on_terminated (a_http_handler)
+		end
+
+	on_terminated (h: separate HTTP_HANDLER)
+		require
+			h.is_terminated
+		do
+			if h.is_terminated then
+				log ("%N%NTerminating Web Application Server (port="+ http_server_port.out +"):%N")
+			end
+			output.flush
+			output.close
 		end
 
 	shutdown_server
@@ -34,14 +57,10 @@ feature -- Initialization
 			stop_requested := True
 		end
 
-feature -- Output
-
-	log (m: STRING)
-		do
-			io.put_string (m)
-		end
-
 feature	-- Access
+
+	is_terminated: BOOLEAN
+			-- Is terminated?
 
 	is_verbose: BOOLEAN
 		do
@@ -71,7 +90,23 @@ feature {NONE} -- Access
 			Result := conf.http_server_port
 		end
 
-;note
+feature -- Output
+
+	output: FILE
+
+	set_log_output (f: FILE)
+		do
+			output := f
+		end
+
+	log (a_message: separate READABLE_STRING_8)
+			-- Log `a_message'
+		do
+			output.put_string (a_message)
+			output.put_new_line
+		end
+
+note
 	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

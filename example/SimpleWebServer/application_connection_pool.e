@@ -1,35 +1,28 @@
 note
-	description: "Summary description for {APPLICATION_HANDLER}."
+	description: "Summary description for {APPLICATION_CONNECTION_POOL}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 class
-	APPLICATION_HANDLER
+	APPLICATION_CONNECTION_POOL
 
 inherit
-	HTTP_HANDLER
+	HTTP_CONNECTION_POOL
 
 create
 	make
 
-feature {NONE} -- Initialization
+feature -- Access
 
-	build_pool (n: INTEGER)
-		do
-			create {separate APPLICATION_CONNECTION_POOL} pool.make (n)
-			initialize_pool (pool, n)
-		end
-
-feature {NONE} -- Factory
-
-	new_http_connection_handler: separate HTTP_CONNECTION_HANDLER
+	new_connection_handler: separate HTTP_CONNECTION_HANDLER
 		local
 			h: separate APPLICATION_CONNECTION_HANDLER --| Remove "separate" to get non concurrent behavior
 		do
 			create h.make (is_verbose)
 			Result := h
 		end
+
 
 note
 	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"

@@ -4,17 +4,17 @@
 inherit
 	HTTP_REQUEST_HANDLER
 
-	HTTP_SERVER_SHARED_CONFIGURATION
-		undefine
-			default_create
-		end
-
 	SHARED_URI_CONTENTS_TYPES
 		undefine
 			default_create
 		end
 
 	HTTP_CONSTANTS
+		undefine
+			default_create
+		end
+
+	SHARED_APPLICATION_CONFIGURATION
 		undefine
 			default_create
 		end
@@ -185,7 +185,7 @@ feature -- Execution
 		end
 
 note
-	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end -- class GET_REQUEST_HANDLER
 

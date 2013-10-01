@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-9-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-9-0 http://www.eiffel.com/developers/xml/configuration-1-9-0.xsd" name="nino_tests" uuid="0A0CF285-7536-41B4-9E4D-8EDFAA9A4166">
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-11-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-11-0 http://www.eiffel.com/developers/xml/configuration-1-11-0.xsd" name="nino_tests" uuid="0A0CF285-7536-41B4-9E4D-8EDFAA9A4166">
 	<target name="nino_tests">
 		<root class="ANY" feature="default_create"/>
 		<file_rule>
@@ -7,7 +7,7 @@
 			<exclude>/EIFGENs$</exclude>
 			<exclude>/.svn$</exclude>
 		</file_rule>
-		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="all" syntax="provisional">
+		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
 		</option>
 		<setting name="concurrency" value="thread"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
@@ -15,8 +15,8 @@
 		<library name="nino" location="..\nino-safe.ecf" readonly="false"/>
 		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>
 		<library name="thread" location="$ISE_LIBRARY\library\thread\thread-safe.ecf"/>
-		<tests name="src" location=".\src\" recursive="true"/>
 		<cluster name="echo" location=".\echo\" recursive="true"/>
+		<tests name="src" location=".\src\" recursive="true"/>
 	</target>
 	<target name="nino_tests_scoop">
 		<root class="ANY" feature="default_create"/>
@@ -25,7 +25,7 @@
 			<exclude>/EIFGENs$</exclude>
 			<exclude>/.svn$</exclude>
 		</file_rule>
-		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="all" syntax="provisional">
+		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
 		</option>
 		<setting name="concurrency" value="scoop"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
@@ -33,8 +33,8 @@
 		<library name="nino" location="..\nino-safe.ecf" readonly="false"/>
 		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>
 		<library name="thread" location="$ISE_LIBRARY\library\thread\thread-safe.ecf"/>
-		<tests name="src" location=".\src\" recursive="true"/>
 		<cluster name="echo" location=".\echo\" recursive="true"/>
+		<tests name="src" location=".\src\" recursive="true"/>
 	</target>
 	<target name="echo">
 		<root class="ECHO" feature="make_and_launch"/>
@@ -43,7 +43,7 @@
 			<exclude>/EIFGENs$</exclude>
 			<exclude>/.svn$</exclude>
 		</file_rule>
-		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="all" syntax="provisional">
+		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
 		</option>
 		<setting name="executable_name" value="echo"/>
 		<setting name="concurrency" value="thread"/>
@@ -60,11 +60,13 @@
 			<exclude>/EIFGENs$</exclude>
 			<exclude>/.svn$</exclude>
 		</file_rule>
-		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="all" syntax="provisional">
+		<option debug="true" warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
+			<debug name="pool" enabled="true"/>
+			<assertions precondition="true" postcondition="true" check="true"/>
 		</option>
 		<setting name="executable_name" value="echo"/>
 		<setting name="concurrency" value="scoop"/>
-		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
+		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf" readonly="false"/>
 		<library name="http_client" location=".\ewf\library\client\http_client\http_client-safe.ecf" readonly="false"/>
 		<library name="nino" location="..\nino-safe.ecf" readonly="false"/>
 		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>

@@ -11,9 +11,9 @@ deferred class
 	HTTP_HANDLER
 
 inherit
-	ANY
-
 	HTTP_CONSTANTS
+
+	SHARED_EXECUTION_ENVIRONMENT
 
 feature {NONE} -- Initialization
 
@@ -23,22 +23,46 @@ feature {NONE} -- Initialization
 			-- `a_server': The main server object
 		require
 			a_server_attached: a_server /= Void
+		local
+			n: INTEGER
 		do
 			server := a_server
 			is_stop_requested := False
+			import_configuration (separate_server_configuration (a_server))
+			if force_single_threaded then
+				n := 1
+			else
+				n := max_concurrent_connections
+			end
+			build_pool (n)
 		ensure
 			server_set: a_server ~ server
+		end
+
+	build_pool (n: INTEGER)
+		deferred
+		end
+
+	initialize_pool (p: like pool; n: INTEGER)
+		do
+			p.set_count (n)
+			p.set_is_verbose (is_verbose)
 		end
 
 feature -- Output
 
 	log (a_message: READABLE_STRING_8)
-			-- Output message
+			-- Log `a_message'
 		do
-			io.put_string (a_message)
+			server_log_message (a_message, server)
 		end
 
-feature -- Inherited Features
+	server_log_message (a_message: READABLE_STRING_8; a_server: like server)
+		do
+			a_server.log (a_message)
+		end
+
+feature -- Execution
 
 	execute
 			-- <Precursor>
@@ -47,21 +71,30 @@ feature -- Inherited Features
 			l_listening_socket: detachable TCP_STREAM_SOCKET
 			l_http_port: INTEGER
 		do
+			is_terminated := False
 			launched := False
 			port := 0
 			is_stop_requested := False
 			l_http_port := http_server_port
-			create l_listening_socket.make_server_by_port (l_http_port)
+			if
+				attached http_server_name as l_servername and then
+				attached (create {INET_ADDRESS_FACTORY}).create_from_name (l_servername) as l_addr
+			then
+				create l_listening_socket.make_server_by_address_and_port (l_addr, l_http_port)
+			else
+				create l_listening_socket.make_server_by_port (l_http_port)
+			end
+
 			if not l_listening_socket.is_bound then
 				if is_verbose then
-					log ("Socket could not be bound on port " + l_http_port.out )
+					log ("Socket could not be bound on port " + l_http_port.out)
 				end
 			else
 				l_http_port := l_listening_socket.port
 				from
 					l_listening_socket.listen (max_tcp_clients)
 					if is_verbose then
-						log ("%NHTTP Connection Server ready on port " + l_http_port.out +" : http://localhost:" + l_http_port.out + "/%N")
+						log ("%NHTTP Connection Server ready on port " + l_http_port.out +" : http://localhost:" + l_http_port.out + "/")
 					end
 					on_launched (l_http_port)
 				until
@@ -73,7 +106,9 @@ feature -- Inherited Features
 							process_connection (l_thread_http_socket)
 						end
 					end
-					is_stop_requested := stop_requested_on_server (server)
+					is_stop_requested := is_stop_requested
+											or else stop_requested_on_server (server)
+											or else stop_requested_on_pool (pool)
 				end
 				l_listening_socket.cleanup
 				check
@@ -103,42 +138,87 @@ feature -- Inherited Features
 		end
 
 	process_connection (a_socket: TCP_STREAM_SOCKET)
-		do
-			if is_verbose then
-				log ("Incoming connection ...%N")
-			end
-			call_receive_message_and_send_reply (new_http_connection_handler, a_socket)
-		end
-
-	call_receive_message_and_send_reply (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: separate TCP_STREAM_SOCKET)
-		do
-			hdl.set_client_socket (a_socket)
-			if force_single_threaded then
-				hdl.receive_message_and_send_reply (True)
-			else
-				pool.add_connection (hdl)
---				hdl.receive_message_and_send_reply (False)
-			end
-		end
-
-	pool: HTTP_CONNECTION_POOL
 		local
-			l_pool: like internal_pool
+			h: detachable separate HTTP_CONNECTION_HANDLER
 		do
-			l_pool := internal_pool
-			if l_pool = Void then
-				create l_pool.make (10)
-				internal_pool := l_pool
+			request_counter := request_counter + 1
+			if is_verbose then
+				log ("#" + request_counter.out + "# Incoming connection...(socket:" + a_socket.descriptor.out + ")")
 			end
-			Result := l_pool
+
+			from
+				h := connection_handler (pool)
+				debug ("pool")
+					if h = Void and is_verbose then
+						log ("WARNING: pool is FULL -> Please wait!")
+					end
+				end
+			until
+				h /= Void or is_stop_requested
+			loop
+				execution_environment.sleep ({INTEGER_64} 10_000_000) -- 10 ms
+				h := connection_handler (pool)
+				debug ("pool")
+					if h /= Void and is_verbose then
+						log ("Pool item available.")
+					end
+				end
+			end
+			if h /= Void then
+				call_receive_message_and_send_reply (h, a_socket)
+			else
+				check is_stop_requested: is_stop_requested end
+				a_socket.cleanup
+			end
 		end
 
-	internal_pool: detachable like pool
+	call_receive_message_and_send_reply (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
+		require
+			not hdl.has_error
+		do
+				--| FIXME jfiat [2011/11/03] : should use a Pool of Threads/Handler to process this connection
+				--| also handle permanent connection...?
 
-feature {NONE} -- Factory
+			hdl.set_client_socket (a_socket)
+			if not hdl.has_error then
+				hdl.set_logger (server)
+				hdl.receive_message_and_send_reply (force_single_threaded)
+			else
+				log ("Error set_client_socket")
+			end
+				-- Clean original socket, the handler has a duplicate socket.
+			if is_verbose then
+				log ("connection completed...")
+			end
+		rescue
+--			if h /= Void then
+				log ("Releasing handler after exception!")
+				hdl.release
+--				separate_release (h)
+--			end
+			a_socket.cleanup
+		end
 
-	new_http_connection_handler: separate HTTP_CONNECTION_HANDLER
-		deferred
+feature {NONE} -- Access
+
+	pool: separate HTTP_CONNECTION_POOL
+			-- Pool of separate connection handlers.
+
+	request_counter: INTEGER
+			-- request counter, incremented for each new incoming connection.
+
+feature {HTTP_CONNECTION_POOL} -- Factory
+
+	connection_handler (a_pool: like pool): detachable separate HTTP_CONNECTION_HANDLER
+		do
+			is_stop_requested := is_stop_requested or a_pool.stop_requested
+			if is_stop_requested or else a_pool.is_full then
+				if is_verbose then
+					log ("Stop requested...")
+				end
+			else
+				Result := a_pool.separate_item
+			end
 		end
 
 feature -- Event
@@ -160,6 +240,7 @@ feature -- Event
 			launched: launched
 		do
 			launched := False
+			is_terminated := True
 		ensure
 			stopped: not launched
 		end
@@ -171,6 +252,9 @@ feature -- Access
 			--| 0: not launched
 
 feature -- Status
+
+	is_terminated: BOOLEAN
+			-- Is terminated?
 
 	is_stop_requested: BOOLEAN
 			-- Set true to stop accept loop
@@ -186,28 +270,36 @@ feature -- Status setting
 			is_stop_requested := True
 		end
 
-feature -- Access: configuration
+feature {NONE} -- Configuration: initialization
+
+	import_configuration (cfg: like server_configuration)
+		do
+			is_verbose := cfg.is_verbose
+			force_single_threaded := cfg.force_single_threaded
+			if attached cfg.http_server_name as l_http_server_name then
+				create {IMMUTABLE_STRING_8} http_server_name.make_from_separate (l_http_server_name)
+			else
+				http_server_name := Void
+			end
+			http_server_port := cfg.http_server_port
+			max_tcp_clients := cfg.max_tcp_clients
+			max_concurrent_connections := cfg.max_concurrent_connections
+		end
+
+feature -- Configuration: access
 
 	is_verbose: BOOLEAN
 			-- Is verbose for output messages.
-		do
-			Result := separate_is_verbose (server_configuration)
-		end
 
 	force_single_threaded: BOOLEAN
-		do
-			Result := separate_force_single_threaded (server_configuration)
-		end
+
+	http_server_name: detachable READABLE_STRING_8
 
 	http_server_port: INTEGER
-		do
-			Result := separate_http_server_port (server_configuration)
-		end
 
 	max_tcp_clients: INTEGER
-		do
-			Result := separate_max_tcp_clients (server_configuration)
-		end
+
+	max_concurrent_connections: INTEGER
 
 feature {NONE} -- Access: server
 
@@ -231,32 +323,18 @@ feature {NONE} -- Access: server
 			Result := a_server.stop_requested
 		end
 
-feature {NONE} -- Access: configuration
+feature {NONE} -- Access: pool		
 
-	separate_is_verbose (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
+	stop_requested_on_pool (p: like pool): BOOLEAN
 		do
-			Result := conf.is_verbose
-		end
-
-	separate_force_single_threaded (conf: separate HTTP_SERVER_CONFIGURATION): BOOLEAN
-		do
-			Result := conf.force_single_threaded
-		end
-
-	separate_http_server_port (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
-		do
-			Result := conf.http_server_port
-		end
-
-	separate_max_tcp_clients (conf: separate HTTP_SERVER_CONFIGURATION): INTEGER
-		do
-			Result := conf.max_tcp_clients
+			Result := p.stop_requested
 		end
 
 invariant
 	server_attached: server /= Void
+	pool_attached: pool /= Void
 
 note
-	copyright: "2011-2012, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

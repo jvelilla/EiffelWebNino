@@ -13,14 +13,12 @@ inherit
 create
 	make
 
-feature {NONE} -- Factory
+feature {NONE} -- Initialization
 
-	new_http_connection_handler: separate HTTP_CONNECTION_HANDLER
-		local
-			h: separate TEST_CONNECTION_HANDLER --| Remove "separate" to get non concurrent behavior
+	build_pool (n: INTEGER)
 		do
-			create h.make (is_verbose)
-			Result := h
+			create {separate TEST_HTTP_CONNECTION_POOL} pool.make (n)
+			initialize_pool (pool, n)
 		end
 
 note
