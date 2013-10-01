@@ -60,7 +60,7 @@
 			<exclude>/EIFGENs$</exclude>
 			<exclude>/.svn$</exclude>
 		</file_rule>
-		<option debug="true" warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
+		<option debug="false" warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
 			<debug name="pool" enabled="true"/>
 			<assertions precondition="true" postcondition="true" check="true"/>
 		</option>

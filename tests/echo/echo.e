@@ -95,8 +95,6 @@ feature {NONE} -- Implementation
 			debug ("nino")
 				a_cfg.set_is_verbose (True)
 			end
-
-			a_cfg.set_is_verbose (True)
 		end
 
 
