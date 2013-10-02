@@ -1,17 +1,17 @@
 note
-	description: "Summary description for {SCOOP_POOLABLE_ITEM}."
+	description: "Summary description for {CONCURRENT_POOL_ITEM}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	SCOOP_POOLABLE_ITEM
+	CONCURRENT_POOL_ITEM
 
 feature	{NONE} -- Access
 
-	pool: detachable separate SCOOP_POOL [SCOOP_POOLABLE_ITEM]
+	pool: detachable separate CONCURRENT_POOL [CONCURRENT_POOL_ITEM]
 
-feature {SCOOP_POOL} -- Change
+feature {CONCURRENT_POOL} -- Change
 
 	set_pool (p: like pool)
 		do
@@ -29,7 +29,7 @@ feature {HTTP_HANDLER} -- Basic operation
 
 feature {NONE} -- Implementation
 
-	pool_release (p: separate SCOOP_POOL [SCOOP_POOLABLE_ITEM])
+	pool_release (p: separate CONCURRENT_POOL [CONCURRENT_POOL_ITEM])
 		do
 			p.release_item (Current)
 		end

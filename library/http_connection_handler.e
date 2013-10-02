@@ -12,7 +12,10 @@ deferred class
 inherit
 	ANY
 
-	SCOOP_POOLABLE_ITEM
+	CONCURRENT_POOL_ITEM
+		redefine
+			release
+		end
 
 	HTTP_CONNECTION_HANDLER_I
 		redefine
@@ -40,9 +43,9 @@ feature {NONE} -- Initialization
 			has_error := False
 			version := Void
 			remote_info := Void
---			if attached client_socket_source as l_sock then
---				cleanup_separate_socket (l_sock)
---			end
+			if attached client_socket_source as l_sock then
+				cleanup_separate_socket (l_sock)
+			end
 			client_socket_source := Void
 
 			if attached client_socket as l_sock then
@@ -55,10 +58,10 @@ feature {NONE} -- Initialization
 			create request_header_map.make (10)
 		end
 
---	cleanup_separate_socket (a_socket: attached like client_socket_source)
---		do
---			a_socket.cleanup
---		end
+	cleanup_separate_socket (a_socket: attached like client_socket_source)
+		do
+			a_socket.cleanup
+		end
 
 feature -- Status report
 
@@ -153,12 +156,18 @@ feature -- Execution
 				else
 					process_request (Current, l_socket)
 	            end
-				reset
 			else
 				check has_client_socket: False end
-				reset
 			end
 			release
+		end
+
+feature {HTTP_HANDLER} -- Basic operation		
+
+	release
+		do
+			reset
+			Precursor
 		end
 
 feature -- Request processing

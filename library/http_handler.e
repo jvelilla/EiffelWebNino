@@ -92,6 +92,8 @@ feature -- Execution
 			else
 				l_http_port := l_listening_socket.port
 				from
+--					l_listening_socket.set_connect_timeout (socket_connect_timeout)
+--					l_listening_socket.set_accept_timeout (socket_accept_timeout)
 					l_listening_socket.listen (max_tcp_clients)
 					if is_verbose then
 						log ("%NHTTP Connection Server ready on port " + l_http_port.out +" : http://localhost:" + l_http_port.out + "/")
@@ -103,12 +105,13 @@ feature -- Execution
 					l_listening_socket.accept
 					if not is_stop_requested then
 						if attached l_listening_socket.accepted as l_thread_http_socket then
-							process_connection (l_thread_http_socket)
+							l_listening_socket.set_timeout (0)
+							process_connection (l_thread_http_socket, pool)
 						end
+						is_stop_requested := stop_requested_on_server (server)
+											 or else stop_requested_on_pool (pool)
+
 					end
-					is_stop_requested := is_stop_requested
-											or else stop_requested_on_server (server)
-											or else stop_requested_on_pool (pool)
 				end
 				l_listening_socket.cleanup
 				check
@@ -137,7 +140,11 @@ feature -- Execution
 			retry
 		end
 
-	process_connection (a_socket: TCP_STREAM_SOCKET)
+	process_connection (a_socket: TCP_STREAM_SOCKET; a_pool: like pool)
+			-- Process incoming connection
+			-- note that the precondition matters for scoop synchronization.
+		require
+			concurrency: not a_pool.is_full or a_pool.stop_requested or is_stop_requested
 		local
 			h: detachable separate HTTP_CONNECTION_HANDLER
 		do
@@ -146,33 +153,20 @@ feature -- Execution
 				log ("#" + request_counter.out + "# Incoming connection...(socket:" + a_socket.descriptor.out + ")")
 			end
 
-			from
-				h := connection_handler (pool)
-				debug ("pool")
-					if h = Void and is_verbose then
-						log ("WARNING: pool is FULL -> Please wait!")
-					end
-				end
-			until
-				h /= Void or is_stop_requested
-			loop
-				execution_environment.sleep ({INTEGER_64} 10_000_000) -- 10 ms
-				h := connection_handler (pool)
-				debug ("pool")
-					if h /= Void and is_verbose then
-						log ("Pool item available.")
-					end
-				end
+			is_stop_requested := is_stop_requested or a_pool.stop_requested
+			if is_stop_requested then
+			else
+				h := a_pool.separate_item
 			end
 			if h /= Void then
-				call_receive_message_and_send_reply (h, a_socket)
+				process_connection_handler (h, a_socket)
 			else
 				check is_stop_requested: is_stop_requested end
 				a_socket.cleanup
 			end
 		end
 
-	call_receive_message_and_send_reply (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
+	process_connection_handler (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
 		require
 			not hdl.has_error
 		do
@@ -191,11 +185,8 @@ feature -- Execution
 				log ("connection completed...")
 			end
 		rescue
---			if h /= Void then
-				log ("Releasing handler after exception!")
-				hdl.release
---				separate_release (h)
---			end
+			log ("Releasing handler after exception!")
+			hdl.release
 			a_socket.cleanup
 		end
 
@@ -284,6 +275,8 @@ feature {NONE} -- Configuration: initialization
 			http_server_port := cfg.http_server_port
 			max_tcp_clients := cfg.max_tcp_clients
 			max_concurrent_connections := cfg.max_concurrent_connections
+			socket_connect_timeout := cfg.socket_connect_timeout
+			socket_accept_timeout := cfg.socket_accept_timeout
 		end
 
 feature -- Configuration: access
@@ -300,6 +293,10 @@ feature -- Configuration: access
 	max_tcp_clients: INTEGER
 
 	max_concurrent_connections: INTEGER
+
+	socket_connect_timeout: INTEGER
+
+	socket_accept_timeout: INTEGER
 
 feature {NONE} -- Access: server
 
@@ -320,6 +317,7 @@ feature {NONE} -- Access: server
 
 	stop_requested_on_server (a_server: like server): BOOLEAN
 		do
+			-- FIXME: we should probably remove this possibility, check with EWF if this is needed.
 			Result := a_server.stop_requested
 		end
 

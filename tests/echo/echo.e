@@ -46,7 +46,7 @@ feature -- Operation
 
 	on_terminated
 		do
-			if attached log_output as f then
+			if attached log_output as f and then not f.is_closed then
 				f.flush
 				f.close
 			end
@@ -91,11 +91,10 @@ feature {NONE} -- Implementation
 	setup (a_cfg: HTTP_SERVER_CONFIGURATION; a_port: INTEGER)
 		do
 			a_cfg.http_server_port := a_port
-			a_cfg.set_max_concurrent_connections (50)
+			a_cfg.set_max_concurrent_connections (1000)
 			debug ("nino")
 				a_cfg.set_is_verbose (True)
 			end
 		end
-
 
 end

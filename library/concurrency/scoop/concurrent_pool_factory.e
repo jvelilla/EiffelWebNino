@@ -1,11 +1,11 @@
 note
-	description: "Summary description for {SCOOP_POOL_FACTORY}."
+	description: "Summary description for {CONCURRENT_POOL_FACTORY}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	SCOOP_POOL_FACTORY [G -> SCOOP_POOLABLE_ITEM]
+	CONCURRENT_POOL_FACTORY [G -> CONCURRENT_POOL_ITEM]
 
 feature -- Access
 

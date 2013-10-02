@@ -1,11 +1,11 @@
 note
-	description: "Summary description for {SCOOP_POOL}."
+	description: "Summary description for {CONCURRENT_POOL}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	SCOOP_POOL [G -> SCOOP_POOLABLE_ITEM]
+	CONCURRENT_POOL [G -> CONCURRENT_POOL_ITEM]
 
 inherit
 	ITERABLE [detachable separate G]
@@ -113,7 +113,7 @@ feature {NONE} -- Internal
 
 	last_available_index: INTEGER
 
-feature {SCOOP_POOLABLE_ITEM} -- Change
+feature {CONCURRENT_POOL_ITEM} -- Change
 
 	release_item (a_item: like new_separate_item)
 			-- Unregister `a_item' from Current pool.
