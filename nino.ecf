@@ -14,16 +14,20 @@
 		<setting name="concurrency" value="thread"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
 		<library name="net" location="$ISE_LIBRARY\library\net\net.ecf"/>
-		<library name="thread" location="$ISE_LIBRARY\library\thread\thread.ecf"/>
-		<cluster name="nino" location=".\library\" recursive="true">
+		<library name="thread" location="$ISE_LIBRARY\library\thread\thread.ecf">
 			<condition>
-				<concurrency value="thread"/>
+				<concurrency excluded_value="none"/>
 			</condition>
 		</library>
 		<cluster name="nino" location=".\library\" recursive="true">
 			<file_rule>
 				<exclude>/concurrency$</exclude>
 			</file_rule>
+			<cluster name="concurrency_none" location="$|concurrency\none\" recursive="true">
+				<condition>
+					<concurrency value="none"/>
+				</condition>
+			</cluster>
 			<cluster name="concurrency_scoop" location="$|concurrency\scoop\" recursive="true">
 				<condition>
 					<concurrency value="scoop"/>

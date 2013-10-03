@@ -9,34 +9,24 @@
 		</file_rule>
 		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
 		</option>
+		<setting name="concurrency" value="none"/>
+		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
+		<library name="http_client" location=".\ewf\library\client\http_client\http_client-safe.ecf" readonly="false"/>
+		<library name="nino" location="..\nino-safe.ecf" readonly="false"/>
+		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>
+		<library name="thread" location="$ISE_LIBRARY\library\thread\thread-safe.ecf"/>
+		<cluster name="echo" location=".\echo\" recursive="true"/>
+		<tests name="src" location=".\src\" recursive="true"/>
+	</target>
+	<target name="nino_tests_thread" extends="nino_tests">
 		<setting name="concurrency" value="thread"/>
-		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
-		<library name="http_client" location=".\ewf\library\client\http_client\http_client-safe.ecf" readonly="false"/>
-		<library name="nino" location="..\nino-safe.ecf" readonly="false"/>
-		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>
-		<library name="thread" location="$ISE_LIBRARY\library\thread\thread-safe.ecf"/>
-		<cluster name="echo" location=".\echo\" recursive="true"/>
-		<tests name="src" location=".\src\" recursive="true"/>
 	</target>
-	<target name="nino_tests_scoop">
-		<root class="ANY" feature="default_create"/>
-		<file_rule>
-			<exclude>/.git$</exclude>
-			<exclude>/EIFGENs$</exclude>
-			<exclude>/.svn$</exclude>
-		</file_rule>
-		<option warning="true" full_class_checking="true" is_attached_by_default="true" void_safety="transitional" syntax="provisional">
-		</option>
+	<target name="nino_tests_scoop" extends="nino_tests">
 		<setting name="concurrency" value="scoop"/>
-		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
-		<library name="http_client" location=".\ewf\library\client\http_client\http_client-safe.ecf" readonly="false"/>
-		<library name="nino" location="..\nino-safe.ecf" readonly="false"/>
-		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>
-		<library name="thread" location="$ISE_LIBRARY\library\thread\thread-safe.ecf"/>
-		<cluster name="echo" location=".\echo\" recursive="true"/>
-		<tests name="src" location=".\src\" recursive="true"/>
 	</target>
+
 	<target name="echo_common" abstract="true">
+		<setting name="executable_name" value="echo"/>
 		<file_rule>
 			<exclude>/.git$</exclude>
 			<exclude>/EIFGENs$</exclude>
@@ -51,16 +41,16 @@
 		<library name="testing" location="$ISE_LIBRARY\library\testing\testing-safe.ecf"/>
 		<cluster name="echo" location=".\echo\" recursive="true"/>
 	</target>
+	<target name="echo" extends="echo_common">
+		<root class="ECHO" feature="make_and_launch"/>
+		<setting name="concurrency" value="none"/>
+	</target>
 	<target name="echo_thread" extends="echo_common">
 		<root class="ECHO" feature="make_and_launch"/>
-		<setting name="executable_name" value="echo"/>
 		<setting name="concurrency" value="thread"/>
 	</target>
 	<target name="echo_scoop" extends="echo_common">
 		<root class="ECHO" feature="make_and_launch"/>
-		<option debug="true">
-		</option>
-		<setting name="executable_name" value="echo"/>
 		<setting name="concurrency" value="scoop"/>
 	</target>
 </system>

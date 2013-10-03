@@ -30,11 +30,6 @@ feature -- Access
 			Result := count >= capacity
 		end
 
-	status: STRING
-		do
-			Result := count.out + " items"
-		end
-
 	capacity: INTEGER
 
 	stop_requested: BOOLEAN

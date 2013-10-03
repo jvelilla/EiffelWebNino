@@ -97,11 +97,11 @@ feature -- Output
 
 	log (m: STRING)
 		do
---			if attached logger as l_logger then
---				separate_log (m, l_logger)
---			else
+			if attached logger as l_logger then
+				separate_log (m, l_logger)
+			else
 				io.put_string (m + "%N")
---			end
+			end
 		end
 
 	separate_log (m: STRING; a_logger: separate HTTP_SERVER_LOGGER)
@@ -119,19 +119,6 @@ feature -- Access
 				-- and thus avoid closing related `client_socket'.
 
 feature -- Execution
-
-	receive_message_and_send_reply (force_single_threaded: BOOLEAN)
-		require
-			socket_attached: attached client_socket as r_client_socket
---			socket_valid: r_client_socket.is_open_read and then r_client_socket.is_open_write
-			a_http_socket: not r_client_socket.is_closed
-		do
-			if force_single_threaded then
-				execute
-			else
-				launch
-			end
-		end
 
 	execute
 		local
@@ -162,7 +149,7 @@ feature -- Execution
 			release
 		end
 
-feature {HTTP_HANDLER} -- Basic operation		
+feature {CONCURRENT_POOL, HTTP_HANDLER} -- Basic operation		
 
 	release
 		do

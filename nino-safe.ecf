@@ -16,13 +16,18 @@
 		<library name="net" location="$ISE_LIBRARY\library\net\net-safe.ecf"/>
 		<library name="thread" location="$ISE_LIBRARY\library\thread\thread-safe.ecf">
 			<condition>
-				<concurrency value="thread"/>
+				<concurrency excluded_value="none"/>
 			</condition>
 		</library>
 		<cluster name="nino" location=".\library\" recursive="true">
 			<file_rule>
 				<exclude>/concurrency$</exclude>
 			</file_rule>
+			<cluster name="concurrency_none" location="$|concurrency\none\" recursive="true">
+				<condition>
+					<concurrency value="none"/>
+				</condition>
+			</cluster>
 			<cluster name="concurrency_scoop" location="$|concurrency\scoop\" recursive="true">
 				<condition>
 					<concurrency value="scoop"/>

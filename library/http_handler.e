@@ -68,7 +68,8 @@ feature -- Execution
 			-- <Precursor>
 			-- Creates a socket and connects to the http server.
 		local
-			l_listening_socket: detachable TCP_STREAM_SOCKET
+			l_listening_socket,
+			l_accepted_socket: detachable TCP_STREAM_SOCKET
 			l_http_port: INTEGER
 		do
 			is_terminated := False
@@ -104,13 +105,17 @@ feature -- Execution
 				loop
 					l_listening_socket.accept
 					if not is_stop_requested then
-						if attached l_listening_socket.accepted as l_thread_http_socket then
-							l_listening_socket.set_timeout (0)
-							process_connection (l_thread_http_socket, pool)
+						l_accepted_socket := l_listening_socket.accepted
+						if l_accepted_socket /= Void then
+--							l_accepted_socket.set_timeout (0)
+							request_counter := request_counter + 1
+							if is_verbose then
+								log ("#" + request_counter.out + "# Incoming connection...(socket:" + l_accepted_socket.descriptor.out + ")")
+							end
+							process_connection (l_accepted_socket, pool, request_counter)
+						else
+							is_stop_requested := stop_requested_on_server (server) or else stop_requested_on_pool (pool)
 						end
-						is_stop_requested := stop_requested_on_server (server)
-											 or else stop_requested_on_pool (pool)
-
 					end
 				end
 				l_listening_socket.cleanup
@@ -140,33 +145,26 @@ feature -- Execution
 			retry
 		end
 
-	process_connection (a_socket: TCP_STREAM_SOCKET; a_pool: like pool)
+	process_connection (a_socket: TCP_STREAM_SOCKET; a_pool: like pool; rq_id: INTEGER)
 			-- Process incoming connection
 			-- note that the precondition matters for scoop synchronization.
 		require
 			concurrency: not a_pool.is_full or a_pool.stop_requested or is_stop_requested
-		local
-			h: detachable separate HTTP_CONNECTION_HANDLER
 		do
-			request_counter := request_counter + 1
-			if is_verbose then
-				log ("#" + request_counter.out + "# Incoming connection...(socket:" + a_socket.descriptor.out + ")")
-			end
-
 			is_stop_requested := is_stop_requested or a_pool.stop_requested
 			if is_stop_requested then
-			else
-				h := a_pool.separate_item
-			end
-			if h /= Void then
-				process_connection_handler (h, a_socket)
-			else
-				check is_stop_requested: is_stop_requested end
 				a_socket.cleanup
+			elseif attached a_pool.separate_item as h then
+				process_connection_handler (h, a_socket, force_single_threaded)
+			else
+				check is_not_full: False end
+				a_socket.cleanup
+--			else
+--				a_pool.process_incoming_connection (a_socket, force_single_threaded)
 			end
 		end
 
-	process_connection_handler (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
+	process_connection_handler (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET; a_flag_force_single_threaded: BOOLEAN)
 		require
 			not hdl.has_error
 		do
@@ -175,14 +173,14 @@ feature -- Execution
 
 			hdl.set_client_socket (a_socket)
 			if not hdl.has_error then
-				hdl.set_logger (server)
-				hdl.receive_message_and_send_reply (force_single_threaded)
+--				hdl.set_logger (server)
+				if a_flag_force_single_threaded then
+					hdl.execute
+				else
+					hdl.launch
+				end
 			else
-				log ("Error set_client_socket")
-			end
-				-- Clean original socket, the handler has a duplicate socket.
-			if is_verbose then
-				log ("connection completed...")
+				log ("Internal error (set_client_socket failed)")
 			end
 		rescue
 			log ("Releasing handler after exception!")
