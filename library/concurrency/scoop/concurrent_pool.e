@@ -7,16 +7,12 @@ note
 deferred class
 	CONCURRENT_POOL [G -> CONCURRENT_POOL_ITEM]
 
-inherit
-	ITERABLE [detachable separate G]
-
 feature {NONE} -- Initialization
 
 	make (n: INTEGER)
 		do
 			capacity := n
 			create items.make_empty (n)
-			create available_items.make_empty (n)
 --			create busy_items.make_filled (False, n)
 			create busy_items.make_empty (n)
 		end
@@ -85,12 +81,6 @@ feature -- Access
 			end
 		end
 
-	new_cursor: ITERATION_CURSOR [detachable separate G]
-			-- Fresh cursor associated with current structure
-		do
-			Result := items.new_cursor
-		end
-
 feature -- Basic operation
 
 	gracefull_stop
@@ -103,10 +93,6 @@ feature {NONE} -- Internal
 	items: SPECIAL [detachable separate G]
 
 	busy_items: SPECIAL [BOOLEAN]
-
-	available_items: SPECIAL [INTEGER]
-
-	last_available_index: INTEGER
 
 feature {CONCURRENT_POOL_ITEM} -- Change
 
