@@ -98,6 +98,11 @@ feature -- Access: send reply
 			Result.append (Content_length + ": ")
 			Result.append (content_length_data)
 			Result.append (crlf)
+
+				-- For now, Nino does not handle persistent connection
+			Result.append ("Connection: close")
+			Result.append (crlf)
+
 			Result.append (crlf)
 			-- TODO: could add the size of data being sent here and
 			-- then keep the connection alive
@@ -142,6 +147,6 @@ feature -- Change element: send reply
 		end
 
 note
-	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
