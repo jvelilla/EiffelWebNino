@@ -9,19 +9,23 @@ feature
 	make (p: INTEGER)
 		local
 			cfg: HTTP_SERVER_CONFIGURATION
-			f: PLAIN_TEXT_FILE
+			l_factory: TEST_CONNECTION_HANDLER_FACTORY
 		do
 			create cfg.make
 			setup (cfg, p)
 
-			create server.make (cfg)
+			create l_factory
+			create server.make (cfg, l_factory)
 
-			create f.make_with_name ("server.log")
-			f.open_append
-			server.set_log_output (f)
-			log_output := f
+--			if attached (create {PLAIN_TEXT_FILE}.make_with_name ("server.log")) as f then
+--				f.open_append
+--				server.set_log_output (f)
+--				log_output := f		
+--			end
 
-			create {TEST_HANDLER} handler.make (server)
+			l_factory.set_server (server) -- to provide shutdown facility to TEST_CONNECTION_HANDLER
+
+			create {HTTP_LISTENER} listener.make (server)
 		end
 
 	make_and_launch
@@ -35,13 +39,8 @@ feature -- Operation
 
 	launch
 		do
-			server.launch (handler)
+			server.launch (listener)
 			on_terminated
-		end
-
-	shutdown
-		do
-			separate_shutdown (handler)
 		end
 
 	on_terminated
@@ -59,39 +58,39 @@ feature -- Access
 
 	is_launched: BOOLEAN
 		do
-			Result := separate_is_launched (handler)
+			Result := separate_is_launched (listener)
 		end
 
 	port_number: INTEGER
 		do
-			Result := separate_port_number (handler)
+			Result := separate_port_number (listener)
 		end
 
 feature {NONE} -- Implementation
 
-	separate_shutdown (h: like handler)
-		do
-			h.shutdown
-		end
-
-	separate_port_number (h: like handler): INTEGER
+	separate_port_number (h: like listener): INTEGER
 		do
 			Result := h.port
 		end
 
-	separate_is_launched (h: like handler): BOOLEAN
+	separate_is_launched (h: like listener): BOOLEAN
 		do
-			Result := h.launched
+			Result := h.is_launched
+		end
+
+	separate_is_terminated (h: like listener): BOOLEAN
+		do
+			Result := h.is_terminated
 		end
 
 	server: HTTP_SERVER
 
-	handler: HTTP_HANDLER
+	listener: HTTP_LISTENER_I
 
 	setup (a_cfg: HTTP_SERVER_CONFIGURATION; a_port: INTEGER)
 		do
 			a_cfg.http_server_port := a_port
-			a_cfg.set_max_concurrent_connections (1000)
+			a_cfg.set_max_concurrent_connections (500)
 			debug ("nino")
 				a_cfg.set_is_verbose (True)
 			end

@@ -4,15 +4,17 @@ note
 	date        : "$Date$"
 	revision    : "$Revision$"
 
-deferred class
+class
 	HTTP_CONNECTION_POOL
 
 inherit
 	CONCURRENT_POOL [HTTP_CONNECTION_HANDLER]
 		rename
-			new_separate_item as new_connection_handler,
 			release_item as release_connection_handler
 		end
+
+create
+	make
 
 feature -- Access
 

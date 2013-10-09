@@ -15,17 +15,17 @@ create
 
 feature -- Request processing
 
-	process_request (a_handler: HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
+	process_request (a_socket: TCP_STREAM_SOCKET)
 			-- Process request ...
 		local
 			a_method: STRING
 		do
-			a_method := a_handler.method
+			a_method := method
 
 			if a_method.is_equal (Get) then
-				execute_get_request (a_handler.uri, a_handler.request_header_map, a_handler.request_header, a_socket)
+				execute_get_request (uri, request_header_map, request_header, a_socket)
 			elseif a_method.is_equal (Post) then
-				execute_post_request (a_handler.uri, a_handler.request_header_map, a_handler.request_header, a_socket)
+				execute_post_request (uri, request_header_map, request_header, a_socket)
 			elseif a_method.is_equal (Put) then
 			elseif a_method.is_equal (Options) then
 			elseif a_method.is_equal (Head) then
@@ -59,6 +59,6 @@ feature -- Request processing
 		end
 
 note
-	copyright: "2011-2011, Javier Velilla, Jocelyn Fiat and others"
+	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

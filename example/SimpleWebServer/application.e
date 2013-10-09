@@ -29,8 +29,8 @@ feature {NONE} -- Initialization
 			create l_cfg.make
 			setup (l_cfg, a_port)
 
-			create server.make (l_cfg)
-			create {APPLICATION_HANDLER} handler.make (server)
+			create server.make (l_cfg, create {separate APPLICATION_FACTORY})
+			create {HTTP_LISTENER} listener.make (server)
 --			server.launch (l_http_handler)
 		end
 
@@ -42,7 +42,7 @@ feature {NONE} -- Initialization
 
 	launch
 		do
-			server.launch (handler)
+			server.launch (listener)
 		end
 
 	setup (a_cfg: HTTP_SERVER_CONFIGURATION; a_port: INTEGER)
@@ -59,7 +59,7 @@ feature -- Access
 
 	server: HTTP_SERVER
 
-	handler: HTTP_HANDLER
+	listener: HTTP_LISTENER_I
 
 	default_document_root: STRING = "webroot"
 

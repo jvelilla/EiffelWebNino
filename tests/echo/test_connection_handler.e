@@ -11,12 +11,14 @@ inherit
 
 	SHARED_EXECUTION_ENVIRONMENT
 
+	HTTP_DEBUG_LOGGER
+
 create
 	make
 
 feature -- Request processing
 
-	process_request (a_handler: HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
+	process_request (a_socket: TCP_STREAM_SOCKET)
 			-- Process request ...
 		local
 			response: HTTP_RESPONSE
@@ -28,14 +30,14 @@ feature -- Request processing
 			i: INTEGER
 		do
 			debug ("nino")
-				io.put_string ("Incoming connection [" + a_socket.descriptor.out + "] " + ($a_handler).out + "%N")
+				io.put_string ("Incoming connection [" + a_socket.descriptor.out + "] " + ($Current).out + "%N")
 			end
 
-			l_uri := a_handler.uri
-			s := "Request " + a_handler.method + " " + l_uri
+			l_uri := uri
+			s := "Request " + method + " " + l_uri
 			s.append (" socket=" + a_socket.descriptor.out)
 
-			l_map := a_handler.request_header_map
+			l_map := request_header_map
 			across
 				l_map as c
 			loop
@@ -58,7 +60,15 @@ feature -- Request processing
 				end
 				if l_wait.is_integer_64 then
 					l_wait_nanosec := l_wait.to_integer_64 * {INTEGER_64} 1_000_000
-					execution_environment.sleep (l_wait_nanosec)
+					check attached client_socket as l_socket and then attached l_socket.descriptor.out as d then
+						debug ("dbglog")
+							dbglog (generator + ".before sleep {" + d + "}")
+						end
+						execution_environment.sleep (l_wait_nanosec)
+						debug ("dbglog")
+							dbglog (generator + ".after sleep {" + d + "}")
+						end
+					end
 				end
 			elseif l_uri.same_string ("/shutdown/") then
 				shutdown_server
@@ -73,20 +83,32 @@ feature -- Request processing
 
 
 			debug ("nino")
-				io.put_string ("Finished connection [" + a_socket.descriptor.out + "] " + ($a_handler).out + "%N")
+				io.put_string ("Finished connection [" + a_socket.descriptor.out + "] " + ($Current).out + "%N")
 			end
+		end
+
+feature -- Access
+
+	controller: detachable separate HTTP_CONTROLLER
+
+feature -- Change
+
+	set_controller (obj: like controller)
+		do
+			controller := obj
 		end
 
 	shutdown_server
 		do
-			if attached pool as p then
-				separate_shutdown_server (p)
+			if attached controller as obj then
+				separate_shutdown_server (obj)
 			end
 		end
 
-	separate_shutdown_server (p: attached like pool)
+	separate_shutdown_server (obj: attached like controller)
 		do
-			p.gracefull_stop
+			obj.shutdown
 		end
+
 
 end

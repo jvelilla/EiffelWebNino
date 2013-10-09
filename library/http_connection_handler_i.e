@@ -1,26 +1,14 @@
 note
-	description: "[
-			 Instance of HTTP_CONNECTION_HANDLER will process the incoming connection
-			 and extract information on the request and the server
-		 ]"
+	description: "Summary description for {HTTP_CONNECTION_HANDLER_I}."
+	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	HTTP_CONNECTION_HANDLER
+	HTTP_CONNECTION_HANDLER_I
 
 inherit
-	ANY
-
-	CONCURRENT_POOL_ITEM
-		redefine
-			release
-		end
-
-	HTTP_CONNECTION_HANDLER_I
-		redefine
-			make
-		end
+	HTTP_DEBUG_LOGGER
 
 	HTTP_CONSTANTS
 		export
@@ -29,12 +17,8 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (a_is_verbose: BOOLEAN)
-			-- Initialize Current connection handler
-			-- sets the current_request_message to empty.
+	make
 		do
-			Precursor (a_is_verbose)
-			is_verbose := a_is_verbose
 			reset
 		end
 
@@ -43,136 +27,24 @@ feature {NONE} -- Initialization
 			has_error := False
 			version := Void
 			remote_info := Void
-			if attached client_socket_source as l_sock then
-				cleanup_separate_socket (l_sock)
-			end
-			client_socket_source := Void
 
 			if attached client_socket as l_sock then
 				l_sock.cleanup
-				client_socket := Void
 			end
+			client_socket := Void
+
+				-- FIXME: optimize to just wipe_out if needed
 			create method.make_empty
 			create uri.make_empty
 			create request_header.make_empty
 			create request_header_map.make (10)
 		end
 
-	cleanup_separate_socket (a_socket: attached like client_socket_source)
-		do
-			a_socket.cleanup
-		end
-
-feature -- Status report
+feature -- Access
 
 	is_verbose: BOOLEAN
 
-	set_client_socket (a_socket: separate TCP_STREAM_SOCKET)
-		require
-			socket_attached: a_socket /= Void
-			socket_valid: a_socket.is_open_read and then a_socket.is_open_write
-			a_http_socket: not a_socket.is_closed
-		local
-			retried: BOOLEAN
-		do
-			if retried then
-				has_error := True
-			else
-				create client_socket.make_duplicate (a_socket)
-			end
-			client_socket_source := a_socket
-		rescue
-			retried := True
-			retry
-		end
-
-feature -- Output
-
-	logger: detachable separate HTTP_SERVER_LOGGER
-
-	set_logger (a_logger: like logger)
-		do
-			logger := a_logger
-		end
-
-	log (m: STRING)
-		do
-			if attached logger as l_logger then
-				separate_log (m, l_logger)
-			else
-				io.put_string (m + "%N")
-			end
-		end
-
-	separate_log (m: STRING; a_logger: separate HTTP_SERVER_LOGGER)
-		do
-			a_logger.log (m)
-		end
-
-feature -- Access
-
 	client_socket: detachable TCP_STREAM_SOCKET
-
-	client_socket_source: detachable separate TCP_STREAM_SOCKET
-				-- Associated original client socket
-				-- kept to avoid being closed when disposed,
-				-- and thus avoid closing related `client_socket'.
-
-feature -- Execution
-
-	execute
-		local
-			l_remote_info: detachable like remote_info
-		do
-			if attached client_socket as l_socket then
-				create l_remote_info
-				if attached l_socket.peer_address as l_addr then
-					l_remote_info.addr := l_addr.host_address.host_address
-					l_remote_info.hostname := l_addr.host_address.host_name
-					l_remote_info.port := l_addr.port
-					remote_info := l_remote_info
-				end
-
-	            analyze_request_message (l_socket)
-	            if has_error then
-					check catch_bad_incoming_connection: False end
-					if is_verbose then
---						check invalid_incoming_request: False end
-						log ("ERROR: invalid HTTP incoming request")
-					end
-				else
-					process_request (Current, l_socket)
-	            end
-			else
-				check has_client_socket: False end
-			end
-			release
-		end
-
-feature {CONCURRENT_POOL, HTTP_HANDLER} -- Basic operation		
-
-	release
-		do
-			reset
-			Precursor
-		end
-
-feature -- Request processing
-
-	process_request (a_handler: HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET)
-			-- Process request ...
-		require
-			no_error: not has_error
-			a_handler_attached: a_handler /= Void
-			a_uri_attached: a_handler.uri /= Void
-			a_method_attached: a_handler.method /= Void
-			a_header_map_attached: a_handler.request_header_map /= Void
-			a_header_text_attached: a_handler.request_header /= Void
-			a_socket_attached: a_socket /= Void
-		deferred
-		end
-
-feature -- Access
 
 	request_header: STRING
 			-- Header' source
@@ -194,7 +66,80 @@ feature -- Access
 			--| unused for now
 
 	remote_info: detachable TUPLE [addr: STRING; hostname: STRING; port: INTEGER]
-			-- Information related to remote client
+			-- Information related to remote client	
+
+feature -- Change
+
+	set_client_socket (a_socket: separate TCP_STREAM_SOCKET)
+		require
+			socket_attached: a_socket /= Void
+			socket_valid: a_socket.is_open_read and then a_socket.is_open_write
+			a_http_socket: not a_socket.is_closed
+		deferred
+		ensure
+			attached client_socket as s implies s.descriptor = a_socket.descriptor
+		end
+
+	set_is_verbose (b: BOOLEAN)
+		do
+			is_verbose := b
+		end
+
+feature -- Execution
+
+	execute
+		local
+			l_remote_info: detachable like remote_info
+		do
+			if attached client_socket as l_socket then
+				debug ("dbglog")
+					dbglog (generator + ".ENTER execute {" + l_socket.descriptor.out + "}")
+				end
+				create l_remote_info
+				if attached l_socket.peer_address as l_addr then
+					l_remote_info.addr := l_addr.host_address.host_address
+					l_remote_info.hostname := l_addr.host_address.host_name
+					l_remote_info.port := l_addr.port
+					remote_info := l_remote_info
+				end
+
+	            analyze_request_message (l_socket)
+	            if has_error then
+--					check catch_bad_incoming_connection: False end
+					if is_verbose then
+--						check invalid_incoming_request: False end
+						log ("ERROR: invalid HTTP incoming request")
+					end
+				else
+					process_request (l_socket)
+	            end
+	            debug ("dbglog")
+		            dbglog (generator + ".LEAVE execute {" + l_socket.descriptor.out + "}")
+	            end
+			else
+				check has_client_socket: False end
+			end
+            release
+		end
+
+	release
+		do
+			reset
+		end
+
+feature -- Request processing
+
+	process_request (a_socket: TCP_STREAM_SOCKET)
+			-- Process request ...
+		require
+			no_error: not has_error
+			a_uri_attached: uri /= Void
+			a_method_attached: method /= Void
+			a_header_map_attached: request_header_map /= Void
+			a_header_text_attached: request_header /= Void
+			a_socket_attached: a_socket /= Void
+		deferred
+		end
 
 feature -- Parsing
 
@@ -286,6 +231,35 @@ feature -- Parsing
 				Result := a_socket.last_string
 			end
 		end
+
+feature -- Output
+
+	logger: detachable separate HTTP_SERVER_LOGGER
+
+	set_logger (a_logger: like logger)
+		do
+			logger := a_logger
+		end
+
+	log (m: STRING)
+		do
+			if attached logger as l_logger then
+				separate_log (m, l_logger)
+			else
+				io.put_string (m + "%N")
+			end
+		end
+
+	separate_log (m: STRING; a_logger: separate HTTP_SERVER_LOGGER)
+		do
+			a_logger.log (m)
+		end
+
+--feature -- Operation		
+
+--	shutdown_server
+--		deferred
+--		end
 
 invariant
 	request_header_attached: request_header /= Void

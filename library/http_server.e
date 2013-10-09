@@ -10,38 +10,36 @@ class
 inherit
 	HTTP_SERVER_LOGGER
 
+	HTTP_DEBUG_LOGGER
+
 create
 	make
 
 feature -- Initialization
 
-	make (cfg: HTTP_SERVER_CONFIGURATION)
+	make (cfg: HTTP_SERVER_CONFIGURATION; a_factory: like factory)
 		do
 			configuration := cfg
+			factory := a_factory
 			output := io.error
+			create controller
 		end
 
-	setup (a_http_handler: separate HTTP_HANDLER)
-		obsolete
-			"Use `launch' [Oct-2013]"
-		do
-			launch (a_http_handler)
-		end
-
-	launch (a_http_handler: separate HTTP_HANDLER)
+	launch (a_http_listener: HTTP_LISTENER_I)
 		require
-			a_http_handler_valid: a_http_handler /= Void
+			a_http_listener_valid: a_http_listener /= Void
 		do
 			is_terminated := False
 			if is_verbose then
-				log ("%N%NStarting Web Application Server (port="+ http_server_port.out +"):%N")
+				log ("%N%NStarting Web Application Server (port=" + http_server_port.out + "):%N")
 			end
-			stop_requested := False
-			a_http_handler.execute
-			on_terminated (a_http_handler)
+			is_stop_requested := False
+			listener := a_http_listener
+			a_http_listener.execute
+			on_terminated (a_http_listener)
 		end
 
-	on_terminated (h: separate HTTP_HANDLER)
+	on_terminated (h: separate HTTP_LISTENER_I)
 		require
 			h.is_terminated
 		do
@@ -50,14 +48,30 @@ feature -- Initialization
 			end
 			output.flush
 			output.close
+			listener := Void
 		end
 
 	shutdown_server
 		do
-			stop_requested := True
+			debug ("dbglog")
+				dbglog ("Shutdown requested")
+			end
+			is_stop_requested := True
+			controller_shutdown (controller)
+		end
+
+	controller_shutdown (ctl: attached like controller)
+		do
+			ctl.shutdown
 		end
 
 feature	-- Access
+
+	listener: detachable HTTP_LISTENER_I
+
+	controller: separate HTTP_CONTROLLER
+
+	factory: separate HTTP_CONNECTION_HANDLER_FACTORY
 
 	is_terminated: BOOLEAN
 			-- Is terminated?
@@ -75,7 +89,7 @@ feature	-- Access
 	configuration: HTTP_SERVER_CONFIGURATION
 			-- Configuration of the server
 
-	stop_requested: BOOLEAN
+	is_stop_requested: BOOLEAN
 			-- Stops the server
 
 feature {NONE} -- Access

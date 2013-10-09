@@ -12,18 +12,19 @@ inherit
 create
 	make_server_by_address_and_port,
 	make_server_by_port,
-	make_duplicate
+	make_from_separate
 
 create {NETWORK_STREAM_SOCKET}
 	make_from_descriptor_and_address
 
 feature {NONE} -- Initialization
 
-	make_duplicate (s: separate TCP_STREAM_SOCKET)
+	make_from_separate (s: separate TCP_STREAM_SOCKET)
 		require
 			descriptor_available: s.descriptor_available
 		do
 			create_from_descriptor (s.descriptor)
+
 		end
 
 	make_server_by_address_and_port (an_address: INET_ADDRESS; a_port: INTEGER)
