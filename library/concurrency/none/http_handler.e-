@@ -1,0 +1,140 @@
+note
+	description: "[
+			Instance of  HTTP_CONNECTION_HANDLER
+			is in charge to process the incoming connection without any specific analysis
+
+		]"
+	date: "$Date$"
+	revision: "$Revision$"
+
+deferred class
+	HTTP_HANDLER
+
+inherit
+	HTTP_HANDLER_I
+
+feature {NONE} -- Initialize
+
+	initialize
+		local
+			n: INTEGER
+		do
+			if force_single_threaded then
+				n := 1
+			else
+				n := max_concurrent_connections
+			end
+			build_pool (n)
+		end
+
+	build_pool (n: INTEGER)
+		deferred
+		end
+
+	initialize_pool (p: like pool; n: INTEGER)
+ 		do
+			p.set_count (n)
+			p.set_is_verbose (is_verbose)
+ 		end
+
+feature -- Output
+
+	log (a_message: READABLE_STRING_8)
+			-- Log `a_message'
+		do
+			server_log (a_message, server)
+		end
+
+	server_log (a_message: READABLE_STRING_8; a_server: like server)
+		do
+			a_server.log (a_message)
+		end
+
+feature -- Execution
+
+	process_incoming_connection (a_socket: TCP_STREAM_SOCKET)
+		do
+			process_connection (a_socket, pool)
+		end
+
+	process_connection (a_socket: TCP_STREAM_SOCKET; a_pool: like pool)
+			-- Process incoming connection
+			-- note that the precondition matters for scoop synchronization.
+		require
+			concurrency: not a_pool.is_full or a_pool.stop_requested or is_stop_requested
+		do
+			is_stop_requested := is_stop_requested or a_pool.stop_requested
+			if is_stop_requested then
+				a_socket.cleanup
+			elseif attached a_pool.separate_item as h then
+				process_connection_handler (h, a_socket, force_single_threaded)
+			else
+				check is_not_full: False end
+				a_socket.cleanup
+--			else
+--				a_pool.process_incoming_connection (a_socket, force_single_threaded)
+			end
+		end
+
+	process_connection_handler (hdl: separate HTTP_CONNECTION_HANDLER; a_socket: TCP_STREAM_SOCKET; a_flag_force_single_threaded: BOOLEAN)
+		require
+			not hdl.has_error
+		do
+				--| FIXME jfiat [2011/11/03] : should use a Pool of Threads/Handler to process this connection
+				--| also handle permanent connection...?
+
+			hdl.set_client_socket (a_socket)
+			if not hdl.has_error then
+--				hdl.set_logger (server)
+				if a_flag_force_single_threaded then
+					hdl.execute
+				else
+					hdl.launch
+				end
+			else
+				log ("Internal error (set_client_socket failed)")
+			end
+		rescue
+			log ("Releasing handler after exception!")
+			hdl.release
+			a_socket.cleanup
+		end
+
+	update_is_stop_requested
+		do
+			is_stop_requested := stop_requested_on_server (server) or else stop_requested_on_pool (pool)
+		end
+
+feature {NONE} -- Access
+
+	pool: separate HTTP_CONNECTION_POOL
+			-- Pool of separate connection handlers.
+
+feature {HTTP_CONNECTION_POOL} -- Factory
+
+	connection_handler (a_pool: like pool): detachable separate HTTP_CONNECTION_HANDLER
+		do
+			is_stop_requested := is_stop_requested or a_pool.stop_requested
+			if is_stop_requested or else a_pool.is_full then
+				if is_verbose then
+					log ("Stop requested...")
+				end
+			else
+				Result := a_pool.separate_item
+			end
+		end
+
+feature {NONE} -- Access: pool		
+
+	stop_requested_on_pool (p: like pool): BOOLEAN
+		do
+			Result := p.stop_requested
+		end
+
+invariant
+	pool_attached: pool /= Void
+
+note
+	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
+	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
+end

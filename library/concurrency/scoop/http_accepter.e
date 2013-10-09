@@ -1,6 +1,5 @@
 note
 	description: "Summary description for {HTTP_ACCEPTER}."
-	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -21,7 +20,7 @@ feature {NONE} -- Initialization
 	initialize
 		local
 			n: INTEGER
-			p: separate HTTP_CONNECTION_POOL
+			p: like pool
 		do
 			n := max_concurrent_connections (server)
 			create p.make (n)
@@ -29,21 +28,14 @@ feature {NONE} -- Initialization
 			pool := p
 		end
 
-	initialize_pool (p: separate HTTP_CONNECTION_POOL; n: INTEGER)
+	initialize_pool (p: like pool; n: INTEGER)
  		do
 			p.set_count (n)
---			p.set_is_verbose (is_verbose)
  		end
 
 feature -- Access
 
 	is_shutdown_requested: BOOLEAN
-
---	stop_requested_on_server (a_server: like server): BOOLEAN
---		do
---			-- FIXME: we should probably remove this possibility, check with EWF if this is needed.
---			Result := a_server.is_stop_requested
---		end
 
 	max_concurrent_connections (a_server: like server): INTEGER
 		do
@@ -85,7 +77,6 @@ feature {HTTP_LISTENER_I} -- Execution
 			debug ("dbglog")
 				dbglog (generator + ".ENTER process_connection {"+ a_socket.descriptor.out +"}")
 			end
---			is_shutdown_requested := is_shutdown_requested  --or a_pool.stop_requested
 			if is_shutdown_requested then
 				a_socket.cleanup
 			elseif attached a_pool.separate_item (factory) as h then
@@ -93,8 +84,6 @@ feature {HTTP_LISTENER_I} -- Execution
 			else
 				check is_not_full: False end
 				a_socket.cleanup
---			else
---				a_pool.process_incoming_connection (a_socket, force_single_threaded)
 			end
 			debug ("dbglog")
 				dbglog (generator + ".LEAVE process_connection {"+ a_socket.descriptor.out +"}")
@@ -127,11 +116,6 @@ feature {HTTP_LISTENER_I} -- Execution
 			a_socket.cleanup
 		end
 
---	update_is_shutdown_requested
---		do
---			is_shutdown_requested := stop_requested_on_pool (pool) -- or else stop_requested_on_server (server)
---		end
-
 feature {HTTP_LISTENER_I} -- Status report
 
 	wait_for_completion
@@ -149,15 +133,8 @@ feature {HTTP_LISTENER_I} -- Status report
 
 feature {NONE} -- Access
 
-	pool: separate HTTP_CONNECTION_POOL
+	pool: separate CONCURRENT_POOL [HTTP_CONNECTION_HANDLER]
 			-- Pool of separate connection handlers.
-
-feature {NONE} -- Access: pool		
-
---	stop_requested_on_pool (p: like pool): BOOLEAN
---		do
---			Result := p.stop_requested
---		end
 
 invariant
 	pool_attached: pool /= Void

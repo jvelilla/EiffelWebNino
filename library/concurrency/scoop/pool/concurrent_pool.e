@@ -4,11 +4,14 @@ note
 	date: "$Date$"
 	revision: "$Revision$"
 
-deferred class
+class
 	CONCURRENT_POOL [G -> CONCURRENT_POOL_ITEM]
 
 inherit
-	ISE_DEBUG_LOGGER
+	HTTP_DEBUG_LOGGER
+
+create
+	make
 
 feature {NONE} -- Initialization
 
