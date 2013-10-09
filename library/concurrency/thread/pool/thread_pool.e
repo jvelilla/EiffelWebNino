@@ -112,7 +112,7 @@ feature -- Basic operations
 			over_mutex.unlock
 		end
 
-	thread_terminated
+	thread_terminated (a_thread: POOLED_THREAD [G])
 			-- Notifies the thread pool that a thread has terminated its execution.
 		do
 			termination_mutex.lock

@@ -1,17 +1,14 @@
 note
-	description: "Summary description for {CONCURRENT_POOL_FACTORY}."
+	description: "Summary description for {HTTP_CONNECTION_HANDLER_FACTORY}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	CONCURRENT_POOL_FACTORY [G -> CONCURRENT_POOL_ITEM]
+	HTTP_CONNECTION_HANDLER_FACTORY
 
-feature -- Access
-
-	new_separate_item: separate G
-		deferred
-		end
+inherit
+	HTTP_CONNECTION_HANDLER_FACTORY_I
 
 note
 	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"

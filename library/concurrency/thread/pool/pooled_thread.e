@@ -66,10 +66,10 @@ feature {NONE} -- Implementation
 				done
 			loop
 				if attached thread_procedure as l_work then
-					if attached {G} target as l_target then
-						l_work.call ([l_target])
+					if attached target as t then
+						l_work.call ([t])
 					else
-							l_work.call ([])
+						l_work.call (Void)
 					end
 				end
 				if thread_pool.over then
@@ -82,8 +82,9 @@ feature {NONE} -- Implementation
 					end
 				end
 			end
-			thread_pool.thread_terminated
+			thread_pool.thread_terminated (Current)
 		end
+
 note
 	copyright: "2011-2012, Javier Velilla and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
