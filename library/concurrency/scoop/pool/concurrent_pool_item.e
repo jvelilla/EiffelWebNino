@@ -18,7 +18,7 @@ feature {CONCURRENT_POOL} -- Change
 			pool := p
 		end
 
-feature {CONCURRENT_POOL, HTTP_ACCEPTER_I} -- Basic operation
+feature {CONCURRENT_POOL, HTTP_CONNECTION_HANDLER_I} -- Basic operation
 
 	release
 		do

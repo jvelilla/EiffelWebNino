@@ -1,11 +1,11 @@
 note
-	description: "Summary description for {HTTP_DEBUG_LOGGER}."
+	description: "Summary description for {HTTP_DEBUG_FACILITIES}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	HTTP_DEBUG_LOGGER
+	HTTP_DEBUG_FACILITIES
 
 feature {NONE} -- Output
 

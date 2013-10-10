@@ -1,24 +1,14 @@
 note
-	description: "Summary description for {HTTP_LISTENER}."
+	description: "Summary description for {HTTP_REQUEST_HANDLER_FACTORY}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
-	HTTP_LISTENER
+deferred class
+	HTTP_REQUEST_HANDLER_FACTORY
 
 inherit
-	HTTP_LISTENER_I
-
-create
-	make
-
-feature {NONE} -- Initialization
-
-	build_engine
-		do
-			create {HTTP_ACCEPTER} engine.make (server)
-		end
+	HTTP_REQUEST_HANDLER_FACTORY_I
 
 note
 	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"

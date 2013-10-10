@@ -1,5 +1,5 @@
 note
-	description: "Summary description for {HTTP_CONNECTION_HANDLER}."
+	description: "Summary description for {HTTP_REQUEST_HANDLER}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
@@ -8,7 +8,7 @@ class
 	APPLICATION_CONNECTION_HANDLER
 
 inherit
-	HTTP_CONNECTION_HANDLER
+	HTTP_REQUEST_HANDLER
 
 create
 	make
@@ -41,7 +41,7 @@ feature -- Request processing
 
 	execute_get_request (a_uri: STRING; a_headers_map: HASH_TABLE [STRING, STRING]; a_headers_text: STRING; a_socket: TCP_STREAM_SOCKET)
 		local
-			l_http_request : HTTP_REQUEST_HANDLER
+			l_http_request : HTTP_REQUEST
 		do
 			create {GET_REQUEST_HANDLER} l_http_request.make (a_socket)
 			l_http_request.set_uri (a_uri)
@@ -50,7 +50,7 @@ feature -- Request processing
 
 	execute_post_request (a_uri: STRING; a_headers_map: HASH_TABLE [STRING, STRING]; a_headers_text: STRING; a_socket: TCP_STREAM_SOCKET)
 		local
-			l_http_request : HTTP_REQUEST_HANDLER
+			l_http_request : HTTP_REQUEST
 		do
 			check not_yet_implemented: False end
 			create {POST_REQUEST_HANDLER} l_http_request.make (a_socket)

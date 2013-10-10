@@ -4,7 +4,7 @@ create
 	make,
 	make_and_launch
 
-feature
+feature {NONE} -- Initialization
 
 	make (p: INTEGER)
 		local
@@ -24,8 +24,6 @@ feature
 --			end
 
 			l_factory.set_server (server) -- to provide shutdown facility to TEST_CONNECTION_HANDLER
-
-			create {HTTP_LISTENER} listener.make (server)
 		end
 
 	make_and_launch
@@ -39,7 +37,7 @@ feature -- Operation
 
 	launch
 		do
-			server.launch (listener)
+			server.launch
 			on_terminated
 		end
 
@@ -85,7 +83,10 @@ feature {NONE} -- Implementation
 
 	server: HTTP_SERVER
 
-	listener: HTTP_LISTENER_I
+	listener: HTTP_SERVER
+		do
+			Result := server
+		end
 
 	setup (a_cfg: HTTP_SERVER_CONFIGURATION; a_port: INTEGER)
 		do

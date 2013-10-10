@@ -1,16 +1,16 @@
 note
-	description: "Summary description for {HTTP_CONNECTION_HANDLER_FACTORY}."
+	description: "Summary description for {HTTP_REQUEST_HANDLER_FACTORY}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	HTTP_CONNECTION_HANDLER_FACTORY
+	HTTP_REQUEST_HANDLER_FACTORY
 
 inherit
-	HTTP_CONNECTION_HANDLER_FACTORY_I
+	HTTP_REQUEST_HANDLER_FACTORY_I
 
-	CONCURRENT_POOL_FACTORY [HTTP_CONNECTION_HANDLER]
+	CONCURRENT_POOL_FACTORY [HTTP_REQUEST_HANDLER]
 		rename
 			new_separate_item as new_handler
 		end

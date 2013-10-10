@@ -1,17 +1,14 @@
 note
-	description: "Summary description for {HTTP_CONNECTION_HANDLER_FACTORY_I}."
+	description: "Summary description for {HTTP_REQUEST_HANDLER_FACTORY}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 deferred class
-	HTTP_CONNECTION_HANDLER_FACTORY_I
+	HTTP_REQUEST_HANDLER_FACTORY
 
-feature -- Factory
-
-	new_handler: separate HTTP_CONNECTION_HANDLER
-		deferred
-		end
+inherit
+	HTTP_REQUEST_HANDLER_FACTORY_I
 
 note
 	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
