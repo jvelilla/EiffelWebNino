@@ -91,14 +91,20 @@ feature -- Execution
 		local
 			l_remote_info: detachable like remote_info
 			exit : BOOLEAN
+			l_time1, l_time2 : TIME
+			l_duration : TIME_DURATION
 
 		do
 			from
-
+				create l_time1.make_now
+				create l_duration.make_by_seconds (180) -- hardcoded value for testing
+				create l_time2.make_now
 			until
-				exit
+				exit or l_time2.relative_duration (l_time1).fine_seconds_count > l_duration.fine_seconds_count
 			loop
+				l_time2.make_now
 				if attached client_socket as l_socket then
+
 					debug ("dbglog")
 						dbglog (generator + ".ENTER execute {" + l_socket.descriptor.out + "}")
 					end
@@ -123,6 +129,7 @@ feature -- Execution
 		            debug ("dbglog")
 			            dbglog (generator + ".LEAVE execute {" + l_socket.descriptor.out + "}")
 		            end
+
 		            if attached request_header_map.at (connection) as l_connection and then l_connection.is_case_insensitive_equal ("close") then
 		            	exit := True
 		            end
@@ -272,6 +279,7 @@ feature -- Output
 --	shutdown_server
 --		deferred
 --		end
+
 
 invariant
 	request_header_attached: request_header /= Void
