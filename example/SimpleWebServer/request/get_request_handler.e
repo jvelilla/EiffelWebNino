@@ -93,6 +93,9 @@ feature -- Execution
 				answer.set_content_length (0)
 			end
 
+			if attached headers.at (connection) as l_connection then
+				answer.set_connection_type (l_connection)
+			end
 				--| Output the result
 			socket.put_string (answer.reply_header + answer.reply_text)
 		end

@@ -45,6 +45,7 @@ feature -- Request processing
 		do
 			create {GET_REQUEST_HANDLER} l_http_request.make (a_socket)
 			l_http_request.set_uri (a_uri)
+			l_http_request.set_headers (a_headers_map)
 			l_http_request.process
 		end
 

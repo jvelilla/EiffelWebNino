@@ -90,36 +90,48 @@ feature -- Execution
 	execute
 		local
 			l_remote_info: detachable like remote_info
-		do
-			if attached client_socket as l_socket then
-				debug ("dbglog")
-					dbglog (generator + ".ENTER execute {" + l_socket.descriptor.out + "}")
-				end
-				create l_remote_info
-				if attached l_socket.peer_address as l_addr then
-					l_remote_info.addr := l_addr.host_address.host_address
-					l_remote_info.hostname := l_addr.host_address.host_name
-					l_remote_info.port := l_addr.port
-					remote_info := l_remote_info
-				end
+			exit : BOOLEAN
 
-	            analyze_request_message (l_socket)
-	            if has_error then
---					check catch_bad_incoming_connection: False end
-					if is_verbose then
---						check invalid_incoming_request: False end
-						log ("ERROR: invalid HTTP incoming request")
+		do
+			from
+
+			until
+				exit
+			loop
+				if attached client_socket as l_socket then
+					debug ("dbglog")
+						dbglog (generator + ".ENTER execute {" + l_socket.descriptor.out + "}")
 					end
+					create l_remote_info
+					if attached l_socket.peer_address as l_addr then
+						l_remote_info.addr := l_addr.host_address.host_address
+						l_remote_info.hostname := l_addr.host_address.host_name
+						l_remote_info.port := l_addr.port
+						remote_info := l_remote_info
+					end
+
+		            analyze_request_message (l_socket)
+		            if has_error then
+	--					check catch_bad_incoming_connection: False end
+						if is_verbose then
+	--						check invalid_incoming_request: False end
+							log ("ERROR: invalid HTTP incoming request")
+						end
+					else
+						process_request (l_socket)
+		            end
+		            debug ("dbglog")
+			            dbglog (generator + ".LEAVE execute {" + l_socket.descriptor.out + "}")
+		            end
+		            if attached request_header_map.at (connection) as l_connection and then l_connection.is_case_insensitive_equal ("close") then
+		            	exit := True
+		            end
 				else
-					process_request (l_socket)
-	            end
-	            debug ("dbglog")
-		            dbglog (generator + ".LEAVE execute {" + l_socket.descriptor.out + "}")
-	            end
-			else
-				check has_client_socket: False end
+					check has_client_socket: False end
+					exit := True
+				end
 			end
-            release
+			release
 		end
 
 	release
