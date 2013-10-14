@@ -166,8 +166,10 @@ feature -- Listening
 					l_listening_socket.accept
 					if not is_shutdown_requested then
 						l_accepted_socket := l_listening_socket.accepted
+
 						if l_accepted_socket /= Void then
---							l_accepted_socket.set_timeout (0)
+							l_accepted_socket.set_timeout (600)
+							l_accepted_socket.set_non_blocking
 							request_counter := request_counter + 1
 							if is_verbose then
 								log ("#" + request_counter.out + "# Incoming connection...(socket:" + l_accepted_socket.descriptor.out + ")")
