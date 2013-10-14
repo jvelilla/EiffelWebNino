@@ -168,7 +168,6 @@ feature -- Listening
 						l_accepted_socket := l_listening_socket.accepted
 
 						if l_accepted_socket /= Void then
-							l_accepted_socket.set_timeout (600)
 							l_accepted_socket.set_non_blocking
 							request_counter := request_counter + 1
 							if is_verbose then

@@ -101,6 +101,7 @@ feature {HTTP_SERVER} -- Execution
 				dbglog (generator + ".ENTER process_connection_handler {"+ a_socket.descriptor.out +"}")
 			end
 			hdl.set_client_socket (a_socket)
+			hdl.set_keep_alive_timeout (retrieve_keep_alive(server))
 			if not hdl.has_error then
 --				hdl.set_logger (server)
 				hdl.execute
@@ -136,6 +137,11 @@ feature {NONE} -- Access
 	pool: separate CONCURRENT_POOL [HTTP_REQUEST_HANDLER]
 			-- Pool of separate connection handlers.
 
+	retrieve_keep_alive (a_server: like server): INTEGER
+			-- Keep alive timeout
+		do
+			Result := a_server.configuration.keep_alive_timeout
+		end
 invariant
 	pool_attached: pool /= Void
 

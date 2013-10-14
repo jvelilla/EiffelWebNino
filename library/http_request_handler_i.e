@@ -38,9 +38,7 @@ feature {NONE} -- Initialization
 			create uri.make_empty
 			create request_header.make_empty
 			create request_header_map.make (10)
-			create timeout.make_by_seconds (60)
-				-- At the moment hardcoded  60 seconds.
-
+			create timeout.make_by_seconds (keep_alive_timeout)
 		end
 
 feature -- Access
@@ -64,8 +62,11 @@ feature -- Access
 	uri: STRING
 			--  http endpoint
 
+	keep_alive_timeout: INTEGER
+			-- Keep alive timeout
+
 	timeout: TIME_DURATION
-		-- Timeout in seconds
+			-- Timeout in seconds
 
 	version: detachable STRING
 			--  http_version
@@ -91,6 +92,13 @@ feature -- Change
 			is_verbose := b
 		end
 
+	set_keep_alive_timeout (a_timeout: INTEGER)
+			-- Set `keep_alive_timeout' with `a_timeout'
+		do
+			keep_alive_timeout := a_timeout
+		ensure
+			keep_alive_timeout_set: keep_alive_timeout = a_timeout
+		end
 
 feature -- Execution
 
@@ -98,55 +106,59 @@ feature -- Execution
 		local
 			l_remote_info: detachable like remote_info
 			exit: BOOLEAN
-			l_persistent_counter : INTEGER
-			l_time1, l_time2 : TIME
-
+			l_persistent_counter: INTEGER
+			l_time1, l_time2: TIME
 		do
+			if attached client_socket as l_socket then
+				debug ("dbglog")
+					dbglog (generator + ".ENTER execute {" + l_socket.descriptor.out + "}")
+				end
+
 				from
 					create l_time1.make_now
 					create l_time2.make_now
 				until
 					exit or else l_time2.relative_duration (l_time1).fine_seconds_count > timeout.fine_seconds_count
 				loop
-					if attached client_socket as l_socket then
+					if l_socket.ready_for_reading then
 						debug ("dbglog")
-							dbglog (generator + ".ENTER execute {" + l_socket.descriptor.out + "}")
+							dbglog (generator + ".LOOP execute {" + l_socket.descriptor.out + "}")
 						end
-						if l_socket.ready_for_reading then
-								create l_remote_info
-								if attached l_socket.peer_address as l_addr then
-									l_remote_info.addr := l_addr.host_address.host_address
-									l_remote_info.hostname := l_addr.host_address.host_name
-									l_remote_info.port := l_addr.port
-									remote_info := l_remote_info
-								end
-						        analyze_request_message (l_socket)
-								if has_error then
-									--	check catch_bad_incoming_connection: False end
-									if is_verbose then
-											--	check invalid_incoming_request: False end
-										log ("ERROR: invalid HTTP incoming request")
-									end
-								else
-									process_request (l_socket)
-								end
-								if attached request_header_map.at (connection) as l_connection and then l_connection.is_case_insensitive_equal ("close") then
-									exit := true
-								end
-								debug ("dbglog")
-									dbglog (generator + ".LEAVE execute {" + l_socket.descriptor.out + "}")
-								end
+						create l_remote_info
+						if attached l_socket.peer_address as l_addr then
+							l_remote_info.addr := l_addr.host_address.host_address
+							l_remote_info.hostname := l_addr.host_address.host_name
+							l_remote_info.port := l_addr.port
+							remote_info := l_remote_info
+						end
+						analyze_request_message (l_socket)
+						if has_error then
+								--	check catch_bad_incoming_connection: False end
+							if is_verbose then
+									--	check invalid_incoming_request: False end
+								log ("ERROR: invalid HTTP incoming request")
+							end
 						else
-							log (".WAITING execute {" + l_socket.descriptor.out + "}")
+							process_request (l_socket)
 						end
+						if attached request_header_map.at (connection) as l_connection and then l_connection.is_case_insensitive_equal ("close") then
+							exit := true
+							debug ("dbglog")
+								dbglog (generator + ".LEAVE execute {" + l_socket.descriptor.out + "}")
+							end
+						end
+
 					else
-						check
-							has_client_socket: False
-						end
+						log (generator + ".WAITING execute {" + l_socket.descriptor.out + "}")
 					end
 					l_time2.make_now
 				end
-					release
+			else
+				check
+					has_client_socket: False
+				end
+			end
+			release
 		end
 
 	release
@@ -182,48 +194,48 @@ feature -- Parsing
 			txt: STRING
 			l_is_verbose: BOOLEAN
 		do
-				create txt.make (64)
-				request_header := txt
-				if a_socket.is_readable and then attached next_line (a_socket) as l_request_line and then not l_request_line.is_empty then
-					txt.append (l_request_line)
+			create txt.make (64)
+			request_header := txt
+			if a_socket.is_readable and then attached next_line (a_socket) as l_request_line and then not l_request_line.is_empty then
+				txt.append (l_request_line)
+				txt.append_character ('%N')
+				analyze_request_line (l_request_line)
+			else
+				has_error := True
+			end
+			l_is_verbose := is_verbose
+			if not has_error or l_is_verbose then
+					-- if `is_verbose' we can try to print the request, even if it is a bad HTTP request
+				from
+					line := next_line (a_socket)
+				until
+					line = Void or end_of_stream
+				loop
+					n := line.count
+					if l_is_verbose then
+						log (line)
+					end
+					pos := line.index_of (':', 1)
+					if pos > 0 then
+						k := line.substring (1, pos - 1)
+						if line [pos + 1].is_space then
+							pos := pos + 1
+						end
+						if line [n] = '%R' then
+							n := n - 1
+						end
+						val := line.substring (pos + 1, n)
+						request_header_map.put (val, k)
+					end
+					txt.append (line)
 					txt.append_character ('%N')
-					analyze_request_line (l_request_line)
-				else
-					has_error := True
-				end
-				l_is_verbose := is_verbose
-				if not has_error or l_is_verbose then
-						-- if `is_verbose' we can try to print the request, even if it is a bad HTTP request
-					from
+					if line.is_empty or else line [1] = '%R' then
+						end_of_stream := True
+					else
 						line := next_line (a_socket)
-					until
-						line = Void or end_of_stream
-					loop
-						n := line.count
-						if l_is_verbose then
-							log (line)
-						end
-						pos := line.index_of (':', 1)
-						if pos > 0 then
-							k := line.substring (1, pos - 1)
-							if line [pos + 1].is_space then
-								pos := pos + 1
-							end
-							if line [n] = '%R' then
-								n := n - 1
-							end
-							val := line.substring (pos + 1, n)
-							request_header_map.put (val, k)
-						end
-						txt.append (line)
-						txt.append_character ('%N')
-						if line.is_empty or else line [1] = '%R' then
-							end_of_stream := True
-						else
-							line := next_line (a_socket)
-						end
 					end
 				end
+			end
 		end
 
 	analyze_request_line (line: STRING)
@@ -250,10 +262,10 @@ feature -- Parsing
 		require
 			is_readable: a_socket.is_open_read
 		do
-				if a_socket.socket_ok and then a_socket.ready_for_reading then
-					a_socket.read_line_thread_aware
-					Result := a_socket.last_string
-				end
+			if a_socket.socket_ok and then a_socket.ready_for_reading then
+				a_socket.read_line_thread_aware
+				Result := a_socket.last_string
+			end
 		end
 
 feature -- Output
@@ -278,14 +290,6 @@ feature -- Output
 		do
 			a_logger.log (m)
 		end
-
-		--feature -- Operation
-
-		--	shutdown_server
-		--		deferred
-		--		end
-
-feature -- Read Message
 
 invariant
 	request_header_attached: request_header /= Void
