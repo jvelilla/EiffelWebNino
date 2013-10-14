@@ -40,7 +40,8 @@ feature -- Access
 			-- Display verbose message to the output?
 
 	keep_alive_timeout: INTEGER assign set_keep_alive_timeout
-			-- Persistent connection timeout	
+			-- Persistent connection timeout
+			-- Timeout unit in Seconds.	
 
 feature -- Element change
 
@@ -92,11 +93,12 @@ feature -- Element change
 		end
 
 
-	set_keep_alive_timeout (v: like keep_alive_timeout)
+	set_keep_alive_timeout (a_seconds: like keep_alive_timeout)
+			-- Set `keep_alive_timeout' with `a_seconds'
 		do
-			keep_alive_timeout := v
+			keep_alive_timeout := a_seconds
 		ensure
-			keep_alive_timeout_set: keep_alive_timeout = v
+			keep_alive_timeout_set: keep_alive_timeout = a_seconds
 		end
 
 
