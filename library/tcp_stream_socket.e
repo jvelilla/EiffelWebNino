@@ -7,24 +7,32 @@ class
 	TCP_STREAM_SOCKET
 
 inherit
+
 	NETWORK_STREAM_SOCKET
+		redefine
+			make
+		end
 
 create
-	make_server_by_address_and_port,
-	make_server_by_port,
-	make_from_separate
+	make_server_by_address_and_port, make_server_by_port, make_from_separate
 
 create {NETWORK_STREAM_SOCKET}
 	make_from_descriptor_and_address
 
 feature {NONE} -- Initialization
 
+	make
+			-- Create a network stream socket.
+		do
+			Precursor
+			set_reuse_address
+		end
+
 	make_from_separate (s: separate TCP_STREAM_SOCKET)
 		require
 			descriptor_available: s.descriptor_available
 		do
 			create_from_descriptor (s.descriptor)
-
 		end
 
 	make_server_by_address_and_port (an_address: INET_ADDRESS; a_port: INTEGER)
@@ -41,9 +49,9 @@ feature -- Basic operation
 
 	send_message (a_msg: STRING)
 		local
-			a_package : PACKET
-			a_data : MANAGED_POINTER
-			c_string : C_STRING
+			a_package: PACKET
+			a_data: MANAGED_POINTER
+			c_string: C_STRING
 		do
 			create c_string.make (a_msg)
 			create a_data.make_from_pointer (c_string.item, a_msg.count + 1)
@@ -78,4 +86,5 @@ feature -- Status report
 note
 	copyright: "2011-2013, Javier Velilla, Jocelyn Fiat and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
+
 end
